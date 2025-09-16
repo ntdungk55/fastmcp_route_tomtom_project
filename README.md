@@ -54,17 +54,42 @@ Example response:
 - DI wiring: `app/di/container.py`
 - MCP server: `interfaces/mcp/server.py`
 
-### Lint & Type check
+### Development Commands
+
+Using Makefile (recommended):
 ```powershell
-uv run ruff check .
-uv run ruff format .
-uv run mypy app
+make dev-install    # Install with dev dependencies
+make test          # Run tests
+make test-cov      # Run tests with coverage
+make lint          # Lint code
+make format        # Format code
+make type-check    # Type checking
+make check         # Run all checks
+make run           # Run MCP server
+```
+
+Or using uv directly:
+```powershell
+uv sync --dev      # Install with dev dependencies
+uv run pytest     # Run tests
+uv run ruff check . # Lint
+uv run ruff format . # Format
+uv run mypy app    # Type check
+```
+
+### Docker Support
+
+Build and run with Docker:
+```powershell
+docker build -t fastmcp-route-tomtom .
+docker run -e TOMTOM_API_KEY=your_key_here fastmcp-route-tomtom
 ```
 
 ### Env vars
 - `TOMTOM_BASE_URL` (default `https://api.tomtom.com`)
 - `TOMTOM_API_KEY` (**required**)
 - `HTTP_TIMEOUT_SEC` (default 12)
+- `LOG_LEVEL` (default INFO)
 
 ### Windows debug tips
 - Bật venv: `.\.venv\Scriptsctivate` (uv tự quản lý env, nhưng tip hữu ích nếu cần)

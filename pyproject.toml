@@ -7,8 +7,20 @@ requires-python = ">=3.11"
 readme = "README.md"
 authors = [{name="Your Name"}]
 dependencies = [
-  "fastmcp",
-  "aiohttp",
+  "fastmcp>=0.1.0",
+  "aiohttp>=3.9.0,<4.0.0",
+  "pydantic>=2.0.0",
+  "structlog>=23.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "ruff>=0.1.0",
+  "mypy>=1.7.0",
+  "pytest>=7.0.0",
+  "pytest-asyncio>=0.21.0",
+  "pytest-cov>=4.0.0",
+  "httpx>=0.25.0",
 ]
 
 [tool.ruff]
