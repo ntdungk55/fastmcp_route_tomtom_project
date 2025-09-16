@@ -1,0 +1,38 @@
+
+from app.application.ports.routing_provider import RoutingProvider
+from app.application.dto.calculate_route_dto import CalculateRouteCommand, RoutePlan
+from app.infrastructure.http.client import AsyncApiClient
+from app.infrastructure.http.request_entity import RequestEntity
+from app.infrastructure.http.http_method import HttpMethod
+from app.infrastructure.tomtom.endpoint import CALCULATE_ROUTE_PATH, DEFAULT_TRAVEL_MODE
+from app.infrastructure.tomtom.acl.mappers import TomTomMapper
+
+class TomTomRoutingAdapter(RoutingProvider):
+    def __init__(self, base_url: str, api_key: str, http: AsyncApiClient, timeout_sec: int = 12):
+        self._base_url = base_url.rstrip("/")
+        self._http = http
+        self._timeout_sec = timeout_sec
+        self._api_key = api_key
+        self._mapper = TomTomMapper()
+
+    async def calculate_route(self, cmd: CalculateRouteCommand) -> RoutePlan:
+        origin = f"{cmd.origin.lat},{cmd.origin.lon}"
+        dest = f"{cmd.destination.lat},{cmd.destination.lon}"
+        path = CALCULATE_ROUTE_PATH.format(origin=origin, destination=dest)
+        travel_mode = DEFAULT_TRAVEL_MODE.get(cmd.travel_mode.value, "car")
+        req = RequestEntity(
+            method=HttpMethod.GET,
+            url=f"{self._base_url}{path}",
+            headers={"Accept": "application/json"},
+            params={
+                "key": self._api_key,
+                "traffic": "true",
+                "sectionType": "traffic",
+                "travelMode": travel_mode,
+                "maxAlternatives": "0",
+            },
+            json=None,
+            timeout_sec=self._timeout_sec,
+        )
+        payload = await self._http.send(req)
+        return self._mapper.to_domain_route_plan(payload)
