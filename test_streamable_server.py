@@ -5,7 +5,8 @@ Test the HTTP Streamable MCP Server functionality
 
 import asyncio
 import json
-from typing import Any
+from typing import Any, Optional
+
 
 import httpx
 
@@ -34,7 +35,7 @@ class MCPTestClient:
             headers["mcp-session-id"] = self.session_id
         return headers
 
-    async def _send_request(self, method: str, params: dict[str, Any] = None):
+    async def _send_request(self, method: str, params: Optional[dict[str, Any]] = None):
         """Send MCP request and handle response."""
         if params is None:
             params = {}

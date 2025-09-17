@@ -312,39 +312,7 @@ async def get_route_traffic_analysis_tool(
             return response.json()
     except Exception as e:
         return {"error": str(e)}
-
-@mcp.tool(name="test_map_tile")
-async def test_map_tile_tool(
-    zoom: int = 0,
-    x: int = 0,
-    y: int = 0,
-    view: str = "Unified"
-) -> dict:
-    """Test TomTom API key with map tile request."""
-    try:
-        import httpx
-        api_key = os.getenv("TOMTOM_API_KEY")
-        if not api_key:
-            return {"error": "TOMTOM_API_KEY not configured"}
-
-        url = f"https://api.tomtom.com/map/1/tile/basic/main/{zoom}/{x}/{y}.png"
-        params = {
-            "view": view,
-            "key": api_key
-        }
-
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url, params=params)
-            response.raise_for_status()
-            return {
-                "status": "success",
-                "status_code": response.status_code,
-                "content_type": response.headers.get("content-type"),
-                "content_length": len(response.content)
-            }
-    except Exception as e:
-        return {"error": str(e)}
-
+        
 def main():
     """Start the MCP server using FastMCP with HTTP Streamable transport."""
     print("🚀 Starting TomTom Route MCP Server with FastMCP (HTTP Streamable)...")
