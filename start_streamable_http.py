@@ -7,7 +7,7 @@ import os
 import sys
 from dataclasses import asdict
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Union
 
 # Add project root to Python path
 project_root = Path(__file__).parent
@@ -29,6 +29,15 @@ mcp = FastMCP("RouteMCP_TomTom")
 # Container instance
 _container = Container()
 
+def safe_float_convert(value: Union[str, float, int]) -> float:
+    """Convert string, int, or float to float safely."""
+    if isinstance(value, (int, float)):
+        return float(value)
+    try:
+        return float(str(value).strip())
+    except (ValueError, TypeError) as e:
+        raise ValueError(f"Cannot convert '{value}' to float: {e}")
+
 # FastMCP tool definitions
 @mcp.tool(name="calculate_route")
 async def calculate_route_tool(
@@ -39,16 +48,24 @@ async def calculate_route_tool(
     travel_mode: Literal["car", "bicycle", "foot"] = "car",
 ) -> dict:
     """Calculate a route (TomTom Routing API) and return a JSON summary."""
-    cmd = CalculateRouteCommand(
-        origin=LatLon(origin_lat, origin_lon),
-        destination=LatLon(dest_lat, dest_lon),
-        travel_mode=TravelMode(travel_mode),
-    )
-    plan = await _container.calculate_route.handle(cmd)
-    return {
-        "summary": asdict(plan.summary),
-        "sections": [asdict(s) for s in plan.sections],
-    }
+    try:
+        origin_lat_float = safe_float_convert(origin_lat)
+        origin_lon_float = safe_float_convert(origin_lon)
+        dest_lat_float = safe_float_convert(dest_lat)
+        dest_lon_float = safe_float_convert(dest_lon)
+        
+        cmd = CalculateRouteCommand(
+            origin=LatLon(origin_lat_float, origin_lon_float),
+            destination=LatLon(dest_lat_float, dest_lon_float),
+            travel_mode=TravelMode(travel_mode),
+        )
+        plan = await _container.calculate_route.handle(cmd)
+        return {
+            "summary": asdict(plan.summary),
+            "sections": [asdict(s) for s in plan.sections],
+        }
+    except Exception as e:
+        return {"error": f"Invalid coordinates: {str(e)}"}
 
 @mcp.tool(name="geocode_address")
 async def geocode_address_tool(
@@ -81,10 +98,10 @@ async def geocode_address_tool(
 
 @mcp.tool(name="get_route_with_traffic")
 async def get_route_with_traffic_tool(
-    origin_lat: float,
-    origin_lon: float,
-    dest_lat: float,
-    dest_lon: float,
+    origin_lat: Union[str, float],
+    origin_lon: Union[str, float],
+    dest_lat: Union[str, float],
+    dest_lon: Union[str, float],
     travel_mode: str = "motorcycle",
     route_type: str = "fastest",
     max_alternatives: int = 1,
@@ -97,7 +114,13 @@ async def get_route_with_traffic_tool(
         if not api_key:
             return {"error": "TOMTOM_API_KEY not configured"}
 
-        url = f"https://api.tomtom.com/routing/1/calculateRoute/{origin_lat},{origin_lon}:{dest_lat},{dest_lon}/json"
+        # Convert coordinates to float
+        origin_lat_float = safe_float_convert(origin_lat)
+        origin_lon_float = safe_float_convert(origin_lon)
+        dest_lat_float = safe_float_convert(dest_lat)
+        dest_lon_float = safe_float_convert(dest_lon)
+
+        url = f"https://api.tomtom.com/routing/1/calculateRoute/{origin_lat_float},{origin_lon_float}:{dest_lat_float},{dest_lon_float}/json"
         params = {
             "key": api_key,
             "traffic": "true",
@@ -183,8 +206,8 @@ async def get_street_center_position_tool(
 
 @mcp.tool(name="get_traffic_condition")
 async def get_traffic_condition_tool(
-    latitude: float,
-    longitude: float,
+    latitude: Union[str, float],
+    longitude: Union[str, float],
     zoom: int = 10
 ) -> dict:
     """Get traffic condition by center point using TomTom Traffic Flow API."""
@@ -194,10 +217,14 @@ async def get_traffic_condition_tool(
         if not api_key:
             return {"error": "TOMTOM_API_KEY not configured"}
 
+        # Convert coordinates to float
+        lat_float = safe_float_convert(latitude)
+        lon_float = safe_float_convert(longitude)
+
         url = f"https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/{zoom}/json"
         params = {
             "key": api_key,
-            "point": f"{latitude},{longitude}"
+            "point": f"{lat_float},{lon_float}"
         }
 
         async with httpx.AsyncClient() as client:
@@ -209,12 +236,12 @@ async def get_traffic_condition_tool(
 
 @mcp.tool(name="get_via_route")
 async def get_via_route_tool(
-    origin_lat: float,
-    origin_lon: float,
-    via_lat: float,
-    via_lon: float,
-    dest_lat: float,
-    dest_lon: float,
+    origin_lat: Union[str, float],
+    origin_lon: Union[str, float],
+    via_lat: Union[str, float],
+    via_lon: Union[str, float],
+    dest_lat: Union[str, float],
+    dest_lon: Union[str, float],
     travel_mode: str = "motorcycle",
     language: str = "vi-VN"
 ) -> dict:
@@ -225,7 +252,15 @@ async def get_via_route_tool(
         if not api_key:
             return {"error": "TOMTOM_API_KEY not configured"}
 
-        url = f"https://api.tomtom.com/routing/1/calculateRoute/{origin_lat},{origin_lon}:{via_lat},{via_lon}:{dest_lat},{dest_lon}/json"
+        # Convert coordinates to float
+        origin_lat_float = safe_float_convert(origin_lat)
+        origin_lon_float = safe_float_convert(origin_lon)
+        via_lat_float = safe_float_convert(via_lat)
+        via_lon_float = safe_float_convert(via_lon)
+        dest_lat_float = safe_float_convert(dest_lat)
+        dest_lon_float = safe_float_convert(dest_lon)
+
+        url = f"https://api.tomtom.com/routing/1/calculateRoute/{origin_lat_float},{origin_lon_float}:{via_lat_float},{via_lon_float}:{dest_lat_float},{dest_lon_float}/json"
         params = {
             "key": api_key,
             "traffic": "true",
@@ -243,10 +278,10 @@ async def get_via_route_tool(
 
 @mcp.tool(name="get_route_traffic_analysis")
 async def get_route_traffic_analysis_tool(
-    origin_lat: float,
-    origin_lon: float,
-    dest_lat: float,
-    dest_lon: float,
+    origin_lat: Union[str, float],
+    origin_lon: Union[str, float],
+    dest_lat: Union[str, float],
+    dest_lon: Union[str, float],
     language: str = "vi-VN"
 ) -> dict:
     """Get best route A→B and check for heavy traffic sections using TomTom Routing API."""
@@ -256,7 +291,13 @@ async def get_route_traffic_analysis_tool(
         if not api_key:
             return {"error": "TOMTOM_API_KEY not configured"}
 
-        url = f"https://api.tomtom.com/routing/1/calculateRoute/{origin_lat},{origin_lon}:{dest_lat},{dest_lon}/json"
+        # Convert coordinates to float
+        origin_lat_float = safe_float_convert(origin_lat)
+        origin_lon_float = safe_float_convert(origin_lon)
+        dest_lat_float = safe_float_convert(dest_lat)
+        dest_lon_float = safe_float_convert(dest_lon)
+
+        url = f"https://api.tomtom.com/routing/1/calculateRoute/{origin_lat_float},{origin_lon_float}:{dest_lat_float},{dest_lon_float}/json"
         params = {
             "key": api_key,
             "traffic": "true",
