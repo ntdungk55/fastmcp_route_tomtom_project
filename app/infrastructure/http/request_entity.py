@@ -1,6 +1,5 @@
 
 from dataclasses import dataclass
-from typing import Dict, Optional
 
 from .http_method import HttpMethod
 

@@ -1,6 +1,5 @@
 
 from dataclasses import dataclass
-from typing import List, Optional
 
 from app.domain.enums.travel_mode import TravelMode
 from app.domain.value_objects.latlon import LatLon

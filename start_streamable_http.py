@@ -3,13 +3,11 @@
 Run TomTom Route MCP Server over HTTP Streamable using FastMCP
 """
 
-import asyncio
-import json
 import os
 import sys
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any, Dict, List, Literal
+from typing import Literal
 
 # Add project root to Python path
 project_root = Path(__file__).parent

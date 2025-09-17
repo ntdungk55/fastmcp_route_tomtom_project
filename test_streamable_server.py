@@ -5,8 +5,7 @@ Test the HTTP Streamable MCP Server functionality
 
 import asyncio
 import json
-import uuid
-from typing import Any, Dict
+from typing import Any
 
 import httpx
 
