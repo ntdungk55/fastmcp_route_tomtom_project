@@ -41,9 +41,25 @@ clean:
 	find . -type d -name __pycache__ -delete
 	find . -type f -name "*.pyc" -delete
 
-# Run the MCP server
+# Run the MCP server on default settings
 run:
 	uv run -m interfaces.mcp.server
+
+# Run MCP server (stdio mode)
+start-server:
+	uv run start_server.py
+
+# Run HTTP MCP server on 192.168.1.3:8081
+start-http:
+	uv run start_http_server.py
+
+# Test MCP server functionality (stdio mode)
+test-server:
+	uv run test_server.py
+
+# Test HTTP MCP server functionality
+test-http:
+	uv run test_http_server.py
 
 # Development mode (with auto-reload)
 dev:

@@ -1,9 +1,10 @@
 
+from app.application.use_cases.calculate_route import CalculateRoute
 from app.infrastructure.config.settings import Settings
 from app.infrastructure.http.client import AsyncApiClient
-from app.infrastructure.tomtom.adapters.routing_adapter import TomTomRoutingAdapter
-from app.application.use_cases.calculate_route import CalculateRoute
 from app.infrastructure.logging.logger import get_logger
+from app.infrastructure.tomtom.adapters.routing_adapter import TomTomRoutingAdapter
+
 
 class Container:
     def __init__(self, settings: Settings | None = None):

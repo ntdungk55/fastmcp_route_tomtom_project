@@ -1,6 +1,7 @@
 import pytest
-from app.domain.value_objects.latlon import LatLon
+
 from app.domain.errors import InvalidCoordinateError
+from app.domain.value_objects.latlon import LatLon
 
 
 class TestLatLon:

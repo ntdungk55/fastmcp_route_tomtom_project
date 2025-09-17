@@ -1,0 +1,24 @@
+{
+  "mcp": {
+    "servers": [
+      {
+        "name": "TomTom Route Server",
+        "description": "Calculate routes using TomTom API",
+        "endpoint": "http://192.168.1.3:8081",
+        "tools": [
+          {
+            "name": "calculate_route",
+            "description": "Calculate route from origin to destination",
+            "parameters": {
+              "origin_lat": {"type": "number", "description": "Origin latitude"},
+              "origin_lon": {"type": "number", "description": "Origin longitude"},
+              "dest_lat": {"type": "number", "description": "Destination latitude"},
+              "dest_lon": {"type": "number", "description": "Destination longitude"},
+              "travel_mode": {"type": "string", "enum": ["car", "bicycle", "foot"], "default": "car"}
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

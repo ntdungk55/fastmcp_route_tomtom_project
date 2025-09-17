@@ -1,13 +1,15 @@
 
 from dataclasses import dataclass
-from typing import Optional, Dict
+from typing import Dict, Optional
+
 from .http_method import HttpMethod
+
 
 @dataclass(frozen=True)
 class RequestEntity:
     method: HttpMethod
     url: str
-    headers: Dict[str, str]
-    params: Dict[str, str]
-    json: Optional[dict]
+    headers: dict[str, str]
+    params: dict[str, str]
+    json: dict | None
     timeout_sec: int

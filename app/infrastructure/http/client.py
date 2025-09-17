@@ -1,7 +1,9 @@
 
 import aiohttp
-from .request_entity import RequestEntity
+
 from .http_method import HttpMethod
+from .request_entity import RequestEntity
+
 
 class AsyncApiClient:
     def __init__(self, default_headers: dict | None = None):

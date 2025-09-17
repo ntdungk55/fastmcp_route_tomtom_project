@@ -1,5 +1,6 @@
 
-from app.application.dto.calculate_route_dto import RoutePlan, RouteSummary, RouteSection
+from app.application.dto.calculate_route_dto import RoutePlan, RouteSection, RouteSummary
+
 
 class TomTomMapper:
     def to_domain_route_plan(self, payload: dict) -> RoutePlan:

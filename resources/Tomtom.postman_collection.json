@@ -1,0 +1,472 @@
+{
+	"info": {
+		"_postman_id": "63b543ea-fcf3-46f9-961c-46f68234e930",
+		"name": "Tomtom",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "8941350",
+		"_collection_link": "https://planetary-spaceship-46118.postman.co/workspace/dung~c6b36b2c-ee4e-4043-a8c6-818d12a8f727/collection/8941350-63b543ea-fcf3-46f9-961c-46f68234e930?action=share&source=collection_link&creator=8941350"
+	},
+	"item": [
+		{
+			"name": "get image test api key",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.tomtom.com/map/1/tile/basic/main/0/0/0.png?view=Unified&key={{TOMTOM_API_KEY}}",
+					"protocol": "https",
+					"host": [
+						"api",
+						"tomtom",
+						"com"
+					],
+					"path": [
+						"map",
+						"1",
+						"tile",
+						"basic",
+						"main",
+						"0",
+						"0",
+						"0.png"
+					],
+					"query": [
+						{
+							"key": "view",
+							"value": "Unified"
+						},
+						{
+							"key": "key",
+							"value": "{{TOMTOM_API_KEY}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Lat long from address",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.tomtom.com/search/2/geocode/{{TEST_ADDR2}}.json?key={{TOMTOM_API_KEY}}&countrySet=VN&limit=1&language=vi-VN",
+					"protocol": "https",
+					"host": [
+						"api",
+						"tomtom",
+						"com"
+					],
+					"path": [
+						"search",
+						"2",
+						"geocode",
+						"{{TEST_ADDR2}}.json"
+					],
+					"query": [
+						{
+							"key": "key",
+							"value": "{{TOMTOM_API_KEY}}"
+						},
+						{
+							"key": "countrySet",
+							"value": "VN"
+						},
+						{
+							"key": "limit",
+							"value": "1"
+						},
+						{
+							"key": "language",
+							"value": "vi-VN"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get the best route with traffic condition",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.tomtom.com/routing/1/calculateRoute/{{A_LAT}},{{A_LON}}:{{B_LAT}},{{B_LON}}/json?key={{TOMTOM_API_KEY}}&traffic=true&sectionType=traffic&instructionsType=text&language=vi-VN&maxAlternatives=1&travelMode=motorcycle&routeType=fastest",
+					"protocol": "https",
+					"host": [
+						"api",
+						"tomtom",
+						"com"
+					],
+					"path": [
+						"routing",
+						"1",
+						"calculateRoute",
+						"{{A_LAT}},{{A_LON}}:{{B_LAT}},{{B_LON}}",
+						"json"
+					],
+					"query": [
+						{
+							"key": "key",
+							"value": "{{TOMTOM_API_KEY}}"
+						},
+						{
+							"key": "traffic",
+							"value": "true"
+						},
+						{
+							"key": "sectionType",
+							"value": "traffic"
+						},
+						{
+							"key": "instructionsType",
+							"value": "text"
+						},
+						{
+							"key": "language",
+							"value": "vi-VN"
+						},
+						{
+							"key": "maxAlternatives",
+							"value": "1"
+						},
+						{
+							"key": "travelMode",
+							"value": "motorcycle"
+						},
+						{
+							"key": "routeType",
+							"value": "fastest"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get intersection's position ",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.tomtom.com/search/2/structuredGeocode.json?key={{TOMTOM_API_KEY}}&countryCode=VN&streetName={{Street6}}&crossStreet={{Street7}}&municipality={{City1}}&limit=1&language=vi-VN",
+					"protocol": "https",
+					"host": [
+						"api",
+						"tomtom",
+						"com"
+					],
+					"path": [
+						"search",
+						"2",
+						"structuredGeocode.json"
+					],
+					"query": [
+						{
+							"key": "key",
+							"value": "{{TOMTOM_API_KEY}}"
+						},
+						{
+							"key": "countryCode",
+							"value": "VN"
+						},
+						{
+							"key": "streetName",
+							"value": "{{Street6}}"
+						},
+						{
+							"key": "crossStreet",
+							"value": "{{Street7}}"
+						},
+						{
+							"key": "municipality",
+							"value": "{{City1}}"
+						},
+						{
+							"key": "limit",
+							"value": "1"
+						},
+						{
+							"key": "language",
+							"value": "vi-VN"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get street's center point position",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.tomtom.com/search/2/search/{{Street6}}.json?key={{TOMTOM_API_KEY}}&countrySet=VN&idxSet=Str&limit=1&language=vi-VN",
+					"protocol": "https",
+					"host": [
+						"api",
+						"tomtom",
+						"com"
+					],
+					"path": [
+						"search",
+						"2",
+						"search",
+						"{{Street6}}.json"
+					],
+					"query": [
+						{
+							"key": "key",
+							"value": "{{TOMTOM_API_KEY}}"
+						},
+						{
+							"key": "countrySet",
+							"value": "VN"
+						},
+						{
+							"key": "idxSet",
+							"value": "Str"
+						},
+						{
+							"key": "limit",
+							"value": "1"
+						},
+						{
+							"key": "language",
+							"value": "vi-VN"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get traffic condition by center point street position",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json?key={{TOMTOM_API_KEY}}&point=10.840224,106.615895",
+					"protocol": "https",
+					"host": [
+						"api",
+						"tomtom",
+						"com"
+					],
+					"path": [
+						"traffic",
+						"services",
+						"4",
+						"flowSegmentData",
+						"absolute",
+						"10",
+						"json"
+					],
+					"query": [
+						{
+							"key": "key",
+							"value": "{{TOMTOM_API_KEY}}"
+						},
+						{
+							"key": "point",
+							"value": "10.840224,106.615895"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Travel from A to B via C",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.tomtom.com/routing/1/calculateRoute/{{A_LAT}},{{A_LON}}:{{C_LAT}},{{C_LON}}:{{B_LAT}},{{B_LON}}/json?key={{TOMTOM_API_KEY}}&traffic=true&sectionType=traffic&instructionsType=text&language=vi-VN",
+					"protocol": "https",
+					"host": [
+						"api",
+						"tomtom",
+						"com"
+					],
+					"path": [
+						"routing",
+						"1",
+						"calculateRoute",
+						"{{A_LAT}},{{A_LON}}:{{C_LAT}},{{C_LON}}:{{B_LAT}},{{B_LON}}",
+						"json"
+					],
+					"query": [
+						{
+							"key": "key",
+							"value": "{{TOMTOM_API_KEY}}"
+						},
+						{
+							"key": "traffic",
+							"value": "true"
+						},
+						{
+							"key": "sectionType",
+							"value": "traffic"
+						},
+						{
+							"key": "instructionsType",
+							"value": "text"
+						},
+						{
+							"key": "language",
+							"value": "vi-VN"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "tuyến tốt nhất A → B hiện có đoạn nào tắc nặng không",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.tomtom.com/routing/1/calculateRoute/{{A_LAT}},{{A_LON}}:{{B_LAT}},{{B_LON}}/json?key={{TOMTOM_API_KEY}}&traffic=true&sectionType=traffic&instructionsType=text&language=vi-VN",
+					"protocol": "https",
+					"host": [
+						"api",
+						"tomtom",
+						"com"
+					],
+					"path": [
+						"routing",
+						"1",
+						"calculateRoute",
+						"{{A_LAT}},{{A_LON}}:{{B_LAT}},{{B_LON}}",
+						"json"
+					],
+					"query": [
+						{
+							"key": "key",
+							"value": "{{TOMTOM_API_KEY}}"
+						},
+						{
+							"key": "traffic",
+							"value": "true"
+						},
+						{
+							"key": "sectionType",
+							"value": "traffic"
+						},
+						{
+							"key": "instructionsType",
+							"value": "text"
+						},
+						{
+							"key": "language",
+							"value": "vi-VN"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "TEST_LAT_ADD1",
+			"value": ""
+		},
+		{
+			"key": "TEST_LON_ADD1",
+			"value": ""
+		},
+		{
+			"key": "TEST_LAT_ADD2",
+			"value": ""
+		},
+		{
+			"key": "TEST_LON_ADD2",
+			"value": ""
+		},
+		{
+			"key": "Street1",
+			"value": ""
+		},
+		{
+			"key": "Street2",
+			"value": ""
+		},
+		{
+			"key": "Street3",
+			"value": ""
+		},
+		{
+			"key": "Street4",
+			"value": ""
+		},
+		{
+			"key": "Street5",
+			"value": ""
+		},
+		{
+			"key": "Street6",
+			"value": ""
+		},
+		{
+			"key": "Street7",
+			"value": ""
+		},
+		{
+			"key": "Street8",
+			"value": ""
+		},
+		{
+			"key": "City1",
+			"value": ""
+		}
+	]
+}

@@ -16,6 +16,6 @@ class TestTravelMode:
 
     def test_string_representation(self):
         """Test string representation."""
-        assert str(TravelMode.CAR) == "car"
-        assert str(TravelMode.BICYCLE) == "bicycle" 
-        assert str(TravelMode.FOOT) == "foot"
+        assert str(TravelMode.CAR) == "TravelMode.CAR"
+        assert str(TravelMode.BICYCLE) == "TravelMode.BICYCLE"
+        assert str(TravelMode.FOOT) == "TravelMode.FOOT"

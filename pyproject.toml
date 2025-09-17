@@ -27,7 +27,10 @@ dev = [
 target-version = "py311"
 line-length = 100
 extend-select = ["E","F","W","I","N","UP","ANN","B","C4","DTZ","ISC","PIE","PT","RET","SIM","PLR","PLE","PERF","RUF","D"]
-ignore = ["ANN101","ANN102"]
+ignore = ["ANN101","ANN102","F401"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["fastmcp"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
@@ -42,6 +45,17 @@ warn_unused_ignores = true
 no_implicit_optional = true
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "fastmcp.*"
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 addopts = "-q -ra --strict-markers --maxfail=1"
 testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
+    "pytest-asyncio>=1.2.0",
+    "pytest-cov>=7.0.0",
+]

@@ -1,7 +1,8 @@
 
 import os
 from typing import Optional
-from pydantic import BaseModel, Field, validator
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class Settings(BaseModel):
@@ -19,19 +20,22 @@ class Settings(BaseModel):
         default_factory=lambda: os.getenv("LOG_LEVEL", "INFO")
     )
 
-    @validator('tomtom_base_url')
+    @field_validator('tomtom_base_url')
+    @classmethod
     def validate_url(cls, v: str) -> str:
         if not v.startswith(('http://', 'https://')):
             raise ValueError('Base URL must start with http:// or https://')
         return v.rstrip('/')
 
-    @validator('tomtom_api_key')
+    @field_validator('tomtom_api_key')
+    @classmethod
     def validate_api_key(cls, v: str) -> str:
         if not v:
             raise ValueError("TOMTOM_API_KEY is required")
         return v
 
-    @validator('log_level')
+    @field_validator('log_level')
+    @classmethod
     def validate_log_level(cls, v: str) -> str:
         valid_levels = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
         if v.upper() not in valid_levels:
@@ -40,4 +44,4 @@ class Settings(BaseModel):
 
     def validate(self) -> None:
         """Legacy method for backward compatibility."""
-        pass  # Pydantic handles validation automatically
+        # Pydantic handles validation automatically

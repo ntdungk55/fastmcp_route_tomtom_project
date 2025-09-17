@@ -1,8 +1,10 @@
 
 from dataclasses import dataclass
-from typing import Optional, List
-from app.domain.value_objects.latlon import LatLon
+from typing import List, Optional
+
 from app.domain.enums.travel_mode import TravelMode
+from app.domain.value_objects.latlon import LatLon
+
 
 @dataclass(frozen=True)
 class RouteSummary:
@@ -20,7 +22,7 @@ class CalculateRouteCommand:
     origin: LatLon
     destination: LatLon
     travel_mode: TravelMode = TravelMode.CAR
-    waypoints: Optional[List[LatLon]] = None
+    waypoints: list[LatLon] | None = None
 
 @dataclass(frozen=True)
 class RoutePlan:
