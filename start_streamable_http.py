@@ -13,6 +13,10 @@ from typing import Literal
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv()
+
 from app.application.dto.calculate_route_dto import CalculateRouteCommand
 from app.di.container import Container
 from app.domain.enums.travel_mode import TravelMode
