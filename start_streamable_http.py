@@ -29,6 +29,9 @@ mcp = FastMCP("RouteMCP_TomTom")
 # Container instance
 _container = Container()
 
+# Global API key - loaded once at startup
+API_KEY = os.getenv("TOMTOM_API_KEY")
+
 def safe_float_convert(value: Union[str, float, int]) -> float:
     """Convert string, int, or float to float safely."""
     if isinstance(value, (int, float)):
@@ -77,13 +80,9 @@ async def geocode_address_tool(
     """Get latitude and longitude from an address using TomTom Geocoding API."""
     try:
         import httpx
-        api_key = os.getenv("TOMTOM_API_KEY")
-        if not api_key:
-            return {"error": "TOMTOM_API_KEY not configured"}
-
         url = f"https://api.tomtom.com/search/2/geocode/{address}.json"
         params = {
-            "key": api_key,
+            "key": API_KEY,
             "countrySet": country_set,
             "limit": limit,
             "language": language
@@ -110,9 +109,6 @@ async def get_route_with_traffic_tool(
     """Get the best route with traffic conditions using TomTom Routing API."""
     try:
         import httpx
-        api_key = os.getenv("TOMTOM_API_KEY")
-        if not api_key:
-            return {"error": "TOMTOM_API_KEY not configured"}
 
         # Convert coordinates to float
         origin_lat_float = safe_float_convert(origin_lat)
@@ -122,7 +118,7 @@ async def get_route_with_traffic_tool(
 
         url = f"https://api.tomtom.com/routing/1/calculateRoute/{origin_lat_float},{origin_lon_float}:{dest_lat_float},{dest_lon_float}/json"
         params = {
-            "key": api_key,
+            "key": API_KEY,
             "traffic": "true",
             "sectionType": "traffic",
             "instructionsType": "text",
@@ -151,13 +147,10 @@ async def get_intersection_position_tool(
     """Get intersection position using TomTom Structured Geocoding API."""
     try:
         import httpx
-        api_key = os.getenv("TOMTOM_API_KEY")
-        if not api_key:
-            return {"error": "TOMTOM_API_KEY not configured"}
 
         url = "https://api.tomtom.com/search/2/structuredGeocode.json"
         params = {
-            "key": api_key,
+            "key": API_KEY,
             "countryCode": country_code,
             "streetName": street_name,
             "crossStreet": cross_street,
@@ -184,13 +177,10 @@ async def get_street_center_position_tool(
     """Get street's center point position using TomTom Search API."""
     try:
         import httpx
-        api_key = os.getenv("TOMTOM_API_KEY")
-        if not api_key:
-            return {"error": "TOMTOM_API_KEY not configured"}
 
         url = f"https://api.tomtom.com/search/2/search/{street_name}.json"
         params = {
-            "key": api_key,
+            "key": API_KEY,
             "countrySet": country_set,
             "idxSet": idx_set,
             "limit": limit,
@@ -213,9 +203,6 @@ async def get_traffic_condition_tool(
     """Get traffic condition by center point using TomTom Traffic Flow API."""
     try:
         import httpx
-        api_key = os.getenv("TOMTOM_API_KEY")
-        if not api_key:
-            return {"error": "TOMTOM_API_KEY not configured"}
 
         # Convert coordinates to float
         lat_float = safe_float_convert(latitude)
@@ -223,7 +210,7 @@ async def get_traffic_condition_tool(
 
         url = f"https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/{zoom}/json"
         params = {
-            "key": api_key,
+            "key": API_KEY,
             "point": f"{lat_float},{lon_float}"
         }
 
@@ -248,9 +235,6 @@ async def get_via_route_tool(
     """Travel from A to B via C using TomTom Routing API."""
     try:
         import httpx
-        api_key = os.getenv("TOMTOM_API_KEY")
-        if not api_key:
-            return {"error": "TOMTOM_API_KEY not configured"}
 
         # Convert coordinates to float
         origin_lat_float = safe_float_convert(origin_lat)
@@ -262,7 +246,7 @@ async def get_via_route_tool(
 
         url = f"https://api.tomtom.com/routing/1/calculateRoute/{origin_lat_float},{origin_lon_float}:{via_lat_float},{via_lon_float}:{dest_lat_float},{dest_lon_float}/json"
         params = {
-            "key": api_key,
+            "key": API_KEY,
             "traffic": "true",
             "sectionType": "traffic",
             "instructionsType": "text",
@@ -287,9 +271,6 @@ async def get_route_traffic_analysis_tool(
     """Get best route A→B and check for heavy traffic sections using TomTom Routing API."""
     try:
         import httpx
-        api_key = os.getenv("TOMTOM_API_KEY")
-        if not api_key:
-            return {"error": "TOMTOM_API_KEY not configured"}
 
         # Convert coordinates to float
         origin_lat_float = safe_float_convert(origin_lat)
@@ -299,7 +280,7 @@ async def get_route_traffic_analysis_tool(
 
         url = f"https://api.tomtom.com/routing/1/calculateRoute/{origin_lat_float},{origin_lon_float}:{dest_lat_float},{dest_lon_float}/json"
         params = {
-            "key": api_key,
+            "key": API_KEY,
             "traffic": "true",
             "sectionType": "traffic",
             "instructionsType": "text",
@@ -317,13 +298,9 @@ async def _geocode_address_helper(address: str, country_set: str = "VN", limit: 
     """Helper function to geocode an address."""
     try:
         import httpx
-        api_key = os.getenv("TOMTOM_API_KEY")
-        if not api_key:
-            return {"error": "TOMTOM_API_KEY not configured"}
-
         url = f"https://api.tomtom.com/search/2/geocode/{address}.json"
         params = {
-            "key": api_key,
+            "key": API_KEY,
             "countrySet": country_set,
             "limit": limit,
             "language": language
@@ -346,9 +323,6 @@ async def _get_route_traffic_analysis_helper(
     """Helper function to get route traffic analysis."""
     try:
         import httpx
-        api_key = os.getenv("TOMTOM_API_KEY")
-        if not api_key:
-            return {"error": "TOMTOM_API_KEY not configured"}
 
         # Convert coordinates to float
         origin_lat_float = safe_float_convert(origin_lat)
@@ -358,7 +332,7 @@ async def _get_route_traffic_analysis_helper(
 
         url = f"https://api.tomtom.com/routing/1/calculateRoute/{origin_lat_float},{origin_lon_float}:{dest_lat_float},{dest_lon_float}/json"
         params = {
-            "key": api_key,
+            "key": API_KEY,
             "traffic": "true",
             "sectionType": "traffic",
             "instructionsType": "text",
@@ -525,7 +499,7 @@ def main():
     print("🚀 Starting TomTom Route MCP Server with FastMCP (HTTP Streamable)...")
 
     # Check required environment variables
-    if not os.getenv("TOMTOM_API_KEY"):
+    if not API_KEY:
         print("❌ ERROR: TOMTOM_API_KEY environment variable is required!")
         print("Please set your TomTom API key:")
         print("  Windows: $env:TOMTOM_API_KEY='your_api_key_here'")
