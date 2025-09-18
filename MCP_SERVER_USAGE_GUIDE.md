@@ -6,7 +6,7 @@ MCP Server này cung cấp dịch vụ tính toán route sử dụng TomTom Rout
 
 - **Server Address**: `192.168.1.3:8081`
 - **Protocol**: MCP over HTTP/WebSocket
-- **Available Tools**: `calculate_route`
+- **Available Tools**: `calculate_route`, `check_traffic_between_addresses`, `geocode_address`, `get_route_with_traffic`, `get_traffic_condition`, `get_route_traffic_analysis`
 
 ## 🛠️ Cài Đặt và Chạy Server
 
@@ -137,6 +137,98 @@ result = await calculate_route(
   ]
 }
 ```
+
+### Tool: `check_traffic_between_addresses` ⭐ MỚI
+
+Kiểm tra tình trạng giao thông giữa hai địa chỉ bằng cách geocoding và phân tích traffic.
+
+**Parameters:**
+- `origin_address` (string): Địa chỉ xuất phát
+- `destination_address` (string): Địa chỉ đến
+- `country_set` (string): Mã quốc gia (mặc định: "VN")
+- `travel_mode` (string): Phương tiện di chuyển (mặc định: "car")
+- `language` (string): Ngôn ngữ (mặc định: "vi-VN")
+
+**Ví dụ sử dụng:**
+
+```python
+# Kiểm tra giao thông từ Hồ Gươm đến Chợ Bến Thành
+result = await check_traffic_between_addresses(
+    origin_address="Hồ Gươm, Hoàn Kiếm, Hà Nội",
+    destination_address="Chợ Bến Thành, Quận 1, TP.HCM",
+    travel_mode="car"
+)
+```
+
+**Response format:**
+```json
+{
+  "origin": {
+    "address": "Hồ Gươm, Hoàn Kiếm, Hà Nội",
+    "coordinates": {"lat": 21.0285, "lon": 105.8542},
+    "geocoded_address": "Hồ Gươm, Phố Hàng Khay, Hoàn Kiếm, Hà Nội, Vietnam"
+  },
+  "destination": {
+    "address": "Chợ Bến Thành, Quận 1, TP.HCM",
+    "coordinates": {"lat": 10.7720, "lon": 106.6986},
+    "geocoded_address": "Chợ Bến Thành, Lê Lợi, Quận 1, TP.HCM, Vietnam"
+  },
+  "route_summary": {
+    "distance_meters": 1234567,
+    "duration_seconds": 45678,
+    "duration_traffic_seconds": 1234
+  },
+  "traffic_analysis": {
+    "overall_status": "HEAVY_TRAFFIC",
+    "traffic_score": 75.5,
+    "conditions_count": {
+      "FLOWING": 5,
+      "SLOW": 3,
+      "JAM": 2,
+      "CLOSED": 0,
+      "UNKNOWN": 0
+    },
+    "heavy_traffic_sections": [
+      {
+        "section_index": 2,
+        "condition": "JAM",
+        "start_index": 10,
+        "end_index": 15
+      }
+    ],
+    "total_sections": 10
+  },
+  "recommendations": [
+    "🚨 Tình trạng giao thông rất tệ - nên tránh tuyến đường này",
+    "⏰ Nên đi sớm hơn hoặc muộn hơn để tránh giờ cao điểm",
+    "🔄 Cân nhắc sử dụng phương tiện công cộng",
+    "🚧 Có 2 đoạn đường bị kẹt xe nặng",
+    "🕐 Thời gian di chuyển có thể tăng 50% so với bình thường"
+  ]
+}
+```
+
+### Tool: `geocode_address`
+
+Chuyển đổi địa chỉ thành tọa độ lat/lon.
+
+**Parameters:**
+- `address` (string): Địa chỉ cần geocoding
+- `country_set` (string): Mã quốc gia (mặc định: "VN")
+- `limit` (int): Số lượng kết quả tối đa (mặc định: 1)
+- `language` (string): Ngôn ngữ (mặc định: "vi-VN")
+
+### Tool: `get_route_with_traffic`
+
+Lấy route tốt nhất với dữ liệu traffic chi tiết.
+
+### Tool: `get_traffic_condition`
+
+Lấy dữ liệu traffic flow tại một vị trí cụ thể.
+
+### Tool: `get_route_traffic_analysis`
+
+Phân tích route để tìm các đoạn đường bị kẹt xe nặng.
 
 ## 🔍 Testing và Debug
 
