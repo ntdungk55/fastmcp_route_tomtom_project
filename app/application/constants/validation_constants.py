@@ -73,12 +73,17 @@ class ValidationPatterns:
 
 
 class DefaultValues:
-    """Default values cho validation."""
-    DEFAULT_LANGUAGE = "vi-VN"
-    DEFAULT_COUNTRY = "VN"
+    """Default values cho validation - sử dụng constants từ Domain layer."""
+    # Import constants from Domain layer để tránh duplicate
+    from app.domain.constants.api_constants import LanguageConstants, CountryConstants, TravelModeConstants
+    
+    DEFAULT_LANGUAGE = LanguageConstants.DEFAULT
+    DEFAULT_COUNTRY = CountryConstants.DEFAULT
     DEFAULT_LIMIT = 1
     DEFAULT_ZOOM = 10
     DEFAULT_TIMEOUT = 30
     DEFAULT_MAX_ALTERNATIVES = 1
-    DEFAULT_TRAVEL_MODE = "car"
-    DEFAULT_ROUTE_TYPE = "fastest"
+    DEFAULT_TRAVEL_MODE = TravelModeConstants.CAR
+    # Import constants from Domain layer
+    from app.domain.constants.api_constants import RouteTypeConstants
+    DEFAULT_ROUTE_TYPE = RouteTypeConstants.FASTEST

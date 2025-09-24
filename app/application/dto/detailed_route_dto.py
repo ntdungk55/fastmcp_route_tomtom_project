@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional, List
 from app.domain.enums.travel_mode import TravelMode
+from app.domain.constants.api_constants import CountryConstants, LanguageConstants
 
 
 @dataclass(frozen=True)
@@ -9,8 +10,8 @@ class DetailedRouteRequest:
     origin_address: str
     destination_address: str
     travel_mode: TravelMode = TravelMode.CAR
-    country_set: str = "VN"
-    language: str = "vi-VN"
+    country_set: str = CountryConstants.DEFAULT
+    language: str = LanguageConstants.DEFAULT
 
 
 @dataclass(frozen=True)

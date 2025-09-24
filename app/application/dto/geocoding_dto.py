@@ -4,15 +4,16 @@ from dataclasses import dataclass
 from typing import Optional
 
 from app.domain.value_objects.latlon import LatLon
+from app.domain.constants.api_constants import CountryConstants, LanguageConstants
 
 
 @dataclass(frozen=True)
 class GeocodeAddressCommandDTO:
     """Command to geocode an address to coordinates."""
     address: str
-    country_set: str = "VN"
+    country_set: str = CountryConstants.DEFAULT
     limit: int = 1
-    language: str = "vi-VN"
+    language: str = LanguageConstants.DEFAULT
 
 
 @dataclass(frozen=True)
@@ -46,6 +47,6 @@ class StructuredGeocodeCommandDTO:
     street_name: str
     cross_street: str
     municipality: str
-    country_code: str = "VN"
+    country_code: str = CountryConstants.DEFAULT
     limit: int = 1
-    language: str = "vi-VN"
+    language: str = LanguageConstants.DEFAULT

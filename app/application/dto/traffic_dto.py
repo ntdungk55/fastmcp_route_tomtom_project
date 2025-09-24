@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Optional, Union
 
 from app.domain.value_objects.latlon import LatLon
+from app.domain.constants.api_constants import TravelModeConstants, RouteTypeConstants, LanguageConstants, CountryConstants
 
 
 @dataclass(frozen=True)
@@ -36,10 +37,10 @@ class RouteWithTrafficCommandDTO:
     """Command to get route with traffic information."""
     origin: LatLon
     destination: LatLon
-    travel_mode: str = "motorcycle"
-    route_type: str = "fastest"
+    travel_mode: str = TravelModeConstants.MOTORCYCLE
+    route_type: str = RouteTypeConstants.FASTEST
     max_alternatives: int = 1
-    language: str = "vi-VN"
+    language: str = LanguageConstants.DEFAULT
 
 
 @dataclass(frozen=True)
@@ -48,8 +49,8 @@ class ViaRouteCommandDTO:
     origin: LatLon
     via_point: LatLon
     destination: LatLon
-    travel_mode: str = "motorcycle"
-    language: str = "vi-VN"
+    travel_mode: str = TravelModeConstants.MOTORCYCLE
+    language: str = LanguageConstants.DEFAULT
 
 
 @dataclass(frozen=True)
@@ -57,7 +58,7 @@ class TrafficAnalysisCommandDTO:
     """Command to analyze traffic on a route."""
     origin: LatLon
     destination: LatLon
-    language: str = "vi-VN"
+    language: str = LanguageConstants.DEFAULT
 
 
 @dataclass(frozen=True)
@@ -86,9 +87,9 @@ class AddressTrafficCommandDTO:
     """Command to check traffic between two addresses."""
     origin_address: str
     destination_address: str
-    country_set: str = "VN"
-    travel_mode: str = "car"
-    language: str = "vi-VN"
+    country_set: str = CountryConstants.DEFAULT
+    travel_mode: str = TravelModeConstants.CAR
+    language: str = LanguageConstants.DEFAULT
 
 
 @dataclass(frozen=True)

@@ -7,6 +7,7 @@ from app.application.dto.geocoding_dto import (
     GeocodeResponseDTO,
     StructuredGeocodeCommandDTO,
 )
+from app.domain.constants.api_constants import CountryConstants
 
 
 class GeocodingProvider(Protocol):
@@ -23,7 +24,7 @@ class GeocodingProvider(Protocol):
     async def search_street_center(
         self, 
         street_name: str, 
-        country_set: str = "VN",
+        country_set: str = CountryConstants.DEFAULT,
         language: str = "vi-VN"
     ) -> GeocodeResponseDTO:
         """Get street center position."""

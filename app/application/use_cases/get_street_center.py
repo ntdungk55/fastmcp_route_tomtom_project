@@ -2,6 +2,7 @@
 
 from app.application.dto.geocoding_dto import GeocodeResponseDTO
 from app.application.ports.geocoding_provider import GeocodingProvider
+from app.domain.constants.api_constants import CountryConstants
 
 
 class GetStreetCenter:
@@ -13,7 +14,7 @@ class GetStreetCenter:
     async def handle(
         self, 
         street_name: str, 
-        country_set: str = "VN",
+        country_set: str = CountryConstants.DEFAULT,
         language: str = "vi-VN"
     ) -> GeocodeResponseDTO:
         """Handle getting street center position."""

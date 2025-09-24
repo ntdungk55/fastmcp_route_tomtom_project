@@ -51,24 +51,27 @@ from app.application.use_cases.save_destination import SaveDestinationUseCase
 from fastmcp import FastMCP
 
 # Constants
-from app.domain.constants.api_constants import LanguageConstants, CountryConstants, LimitConstants
+from app.domain.constants.api_constants import LanguageConstants, CountryConstants, LimitConstants, TravelModeConstants
 from app.application.constants.validation_constants import DefaultValues
-from app.interfaces.constants.mcp_constants import MCPServerConstants, MCPToolDescriptions, MCPErrorMessages, MCPSuccessMessages
+from app.interfaces.constants.mcp_constants import MCPServerConstants, MCPToolDescriptions, MCPErrorMessages, MCPSuccessMessages, MCPDetailedRouteLogMessages, MCPTypeConstants, MCPToolNames, MCPToolErrorMessages
 
 # FastMCP instance
 mcp = FastMCP(MCPServerConstants.SERVER_NAME)
+
+# Create Literal type from constants - using string literals from constants
+TravelModeLiteral = Literal["car", "bicycle", "foot"]
 
 # Container instance với Dependency Injection
 _container = Container()
 
 # FastMCP tool definitions
-@mcp.tool(name="calculate_route")
+@mcp.tool(name=MCPToolNames.CALCULATE_ROUTE)
 async def calculate_route_tool(
     origin_lat: float,
     origin_lon: float,
     dest_lat: float,
     dest_lon: float,
-    travel_mode: Literal["car", "bicycle", "foot"] = "car",
+    travel_mode: TravelModeLiteral = TravelModeConstants.CAR,
 ) -> dict:
     """Calculate a route (TomTom Routing API) and return a JSON summary."""
     try:
@@ -98,9 +101,9 @@ async def calculate_route_tool(
         return result
     except Exception as e:
         print(f"\n❌ Error in calculate_route: {str(e)}")
-        return {"error": f"Invalid coordinates: {str(e)}"}
+        return {"error": MCPToolErrorMessages.INVALID_COORDINATES.format(error=str(e))}
 
-@mcp.tool(name="geocode_address")
+@mcp.tool(name=MCPToolNames.GEOCODE_ADDRESS)
 async def geocode_address_tool(
     address: str,
     country_set: str = CountryConstants.DEFAULT,
@@ -128,9 +131,9 @@ async def geocode_address_tool(
             "summary": result.summary
         }
     except Exception as e:
-        return {"error": f"Geocoding failed: {str(e)}"}
+        return {"error": MCPToolErrorMessages.GEOCODING_FAILED.format(error=str(e))}
 
-@mcp.tool(name="get_route_with_traffic")
+@mcp.tool(name=MCPToolNames.GET_ROUTE_WITH_TRAFFIC)
 async def get_route_with_traffic_tool(
     origin_lat: Union[str, float],
     origin_lon: Union[str, float],
@@ -161,14 +164,14 @@ async def get_route_with_traffic_tool(
             "sections": [asdict(s) for s in result.sections],
         }
     except Exception as e:
-        return {"error": f"Route with traffic calculation failed: {str(e)}"}
+        return {"error": MCPToolErrorMessages.ROUTE_WITH_TRAFFIC_FAILED.format(error=str(e))}
 
-@mcp.tool(name="get_intersection_position")
+@mcp.tool(name=MCPToolNames.GET_INTERSECTION_POSITION)
 async def get_intersection_position_tool(
     street_name: str,
     cross_street: str,
     municipality: str,
-    country_code: str = "VN",
+    country_code: str = CountryConstants.DEFAULT,
     limit: int = 1,
     language: str = LanguageConstants.DEFAULT
 ) -> dict:
@@ -195,12 +198,12 @@ async def get_intersection_position_tool(
             "summary": result.summary
         }
     except Exception as e:
-        return {"error": f"Intersection lookup failed: {str(e)}"}
+        return {"error": MCPToolErrorMessages.INTERSECTION_LOOKUP_FAILED.format(error=str(e))}
 
-@mcp.tool(name="get_street_center_position")
+@mcp.tool(name=MCPToolNames.GET_STREET_CENTER_POSITION)
 async def get_street_center_position_tool(
     street_name: str,
-    country_set: str = "VN",
+    country_set: str = CountryConstants.DEFAULT,
     language: str = LanguageConstants.DEFAULT
 ) -> dict:
     """Tìm tọa độ trung tâm đường phố (sử dụng Clean Architecture)."""
@@ -220,9 +223,9 @@ async def get_street_center_position_tool(
             "summary": result.summary
         }
     except Exception as e:
-        return {"error": f"Street center lookup failed: {str(e)}"}
+        return {"error": MCPToolErrorMessages.STREET_CENTER_LOOKUP_FAILED.format(error=str(e))}
 
-@mcp.tool(name="get_traffic_condition")
+@mcp.tool(name=MCPToolNames.GET_TRAFFIC_CONDITION)
 async def get_traffic_condition_tool(
     latitude: Union[str, float],
     longitude: Union[str, float],
@@ -244,9 +247,9 @@ async def get_traffic_condition_tool(
             "road_closure": result.road_closure
         }
     except Exception as e:
-        return {"error": f"Traffic condition lookup failed: {str(e)}"}
+        return {"error": MCPToolErrorMessages.TRAFFIC_CONDITION_FAILED.format(error=str(e))}
 
-@mcp.tool(name="get_via_route")
+@mcp.tool(name=MCPToolNames.GET_VIA_ROUTE)
 async def get_via_route_tool(
     origin_lat: Union[str, float],
     origin_lon: Union[str, float],
@@ -276,9 +279,9 @@ async def get_via_route_tool(
             "sections": [asdict(s) for s in result.sections],
         }
     except Exception as e:
-        return {"error": f"Via route calculation failed: {str(e)}"}
+        return {"error": MCPToolErrorMessages.VIA_ROUTE_FAILED.format(error=str(e))}
 
-@mcp.tool(name="analyze_route_traffic")
+@mcp.tool(name=MCPToolNames.ANALYZE_ROUTE_TRAFFIC)
 async def analyze_route_traffic_tool(
     origin_lat: Union[str, float],
     origin_lon: Union[str, float],
@@ -301,16 +304,16 @@ async def analyze_route_traffic_tool(
         # Trả về domain DTO dưới dạng dict
         return asdict(result)
     except Exception as e:
-        return {"error": f"Traffic analysis failed: {str(e)}"}
+        return {"error": MCPToolErrorMessages.TRAFFIC_ANALYSIS_FAILED.format(error=str(e))}
 
 # Helper functions đã được thay thế bằng Use Cases trong Clean Architecture
 
-@mcp.tool(name="check_traffic_between_addresses")
+@mcp.tool(name=MCPToolNames.CHECK_TRAFFIC_BETWEEN_ADDRESSES)
 async def check_traffic_between_addresses_tool(
     origin_address: str,
     destination_address: str,
-    country_set: str = "VN",
-    travel_mode: str = "car",
+    country_set: str = CountryConstants.DEFAULT,
+    travel_mode: str = TravelModeConstants.CAR,
     language: str = LanguageConstants.DEFAULT
 ) -> dict:
     """Kiểm tra tình trạng giao thông giữa hai địa chỉ (sử dụng Clean Architecture)."""
@@ -329,9 +332,9 @@ async def check_traffic_between_addresses_tool(
         # Trả về domain DTO dưới dạng dict
         return asdict(result)
     except Exception as e:
-        return {"error": f"Address traffic check failed: {str(e)}"}
+        return {"error": MCPToolErrorMessages.ADDRESS_TRAFFIC_CHECK_FAILED.format(error=str(e))}
 
-@mcp.tool(name="save_destination")
+@mcp.tool(name=MCPToolNames.SAVE_DESTINATION)
 async def save_destination_tool(
     name: str,
     address: str
@@ -349,9 +352,9 @@ async def save_destination_tool(
         # Trả về response dưới dạng dict
         return asdict(result)
     except Exception as e:
-        return {"error": f"Save destination failed: {str(e)}"}
+        return {"error": MCPToolErrorMessages.SAVE_DESTINATION_FAILED.format(error=str(e))}
 
-@mcp.tool(name="list_destinations")
+@mcp.tool(name=MCPToolNames.LIST_DESTINATIONS)
 async def list_destinations_tool() -> dict:
     """Liệt kê tất cả điểm đến đã lưu."""
     try:
@@ -363,9 +366,9 @@ async def list_destinations_tool() -> dict:
         # Trả về response dưới dạng dict
         return asdict(result)
     except Exception as e:
-        return {"error": f"List destinations failed: {str(e)}"}
+        return {"error": MCPToolErrorMessages.LIST_DESTINATIONS_FAILED.format(error=str(e))}
 
-@mcp.tool(name="delete_destination")
+@mcp.tool(name=MCPToolNames.DELETE_DESTINATION)
 async def delete_destination_tool(
     destination_id: str
 ) -> dict:
@@ -379,9 +382,9 @@ async def delete_destination_tool(
         # Trả về response dưới dạng dict
         return asdict(result)
     except Exception as e:
-        return {"error": f"Delete destination failed: {str(e)}"}
+        return {"error": MCPToolErrorMessages.DELETE_DESTINATION_FAILED.format(error=str(e))}
 
-@mcp.tool(name="update_destination")
+@mcp.tool(name=MCPToolNames.UPDATE_DESTINATION)
 async def update_destination_tool(
     destination_id: str,
     name: str | None = None,
@@ -401,17 +404,17 @@ async def update_destination_tool(
         # Trả về response dưới dạng dict
         return asdict(result)
     except Exception as e:
-        return {"error": f"Update destination failed: {str(e)}"}
+        return {"error": MCPToolErrorMessages.UPDATE_DESTINATION_FAILED.format(error=str(e))}
 
-@mcp.tool(name="get_detailed_route")
+@mcp.tool(name=MCPToolNames.GET_DETAILED_ROUTE)
 async def get_detailed_route_tool(
     origin_address: str,
     destination_address: str,
-    travel_mode: Literal["car", "bicycle", "foot"] = "car",
-    country_set: str = "VN",
-    language: str = "vi-VN"
+    travel_mode: TravelModeLiteral = TravelModeConstants.CAR,
+    country_set: str = CountryConstants.DEFAULT,
+    language: str = LanguageConstants.DEFAULT
 ) -> dict:
-    """Tính toán tuyến đường chi tiết giữa hai địa chỉ, sử dụng dữ liệu đã lưu nếu có sẵn."""
+    """Tính toán tuyến đường chi tiết và cung cấp chỉ dẫn từng bước di chuyển giữa hai địa chỉ, bao gồm hướng dẫn lái xe, khoảng cách, thời gian và thông tin giao thông."""
     try:
         # Sử dụng Get Detailed Route Use Case
         request = DetailedRouteRequest(
@@ -425,24 +428,24 @@ async def get_detailed_route_tool(
         result = await _container.get_detailed_route.handle(request)
         
         # Log the result for debugging
-        print(f"\n🔍 MCP Server Response for get_detailed_route:")
-        print(f"📏 Distance: {result.summary.distance_m:,} meters")
-        print(f"⏱️ Duration: {result.summary.duration_s:,} seconds")
-        print(f"🧭 Guidance instructions: {len(result.guidance.instructions)}")
-        print(f"🦵 Route legs: {len(result.legs)}")
-        print(f"📍 Origin: {result.origin.address}")
-        print(f"📍 Destination: {result.destination.address}")
+        print(MCPDetailedRouteLogMessages.SERVER_RESPONSE_HEADER)
+        print(MCPDetailedRouteLogMessages.DISTANCE_LOG.format(distance=result.summary.distance_m))
+        print(MCPDetailedRouteLogMessages.DURATION_LOG.format(duration=result.summary.duration_s))
+        print(MCPDetailedRouteLogMessages.GUIDANCE_INSTRUCTIONS_LOG.format(count=len(result.guidance.instructions)))
+        print(MCPDetailedRouteLogMessages.ROUTE_LEGS_LOG.format(count=len(result.legs)))
+        print(MCPDetailedRouteLogMessages.ORIGIN_LOG.format(address=result.origin.address))
+        print(MCPDetailedRouteLogMessages.DESTINATION_LOG.format(address=result.destination.address))
         
         # Show first few guidance instructions
         if result.guidance.instructions:
-            print(f"\n🧭 First 3 Guidance Instructions:")
+            print(MCPDetailedRouteLogMessages.GUIDANCE_HEADER)
             for i, inst in enumerate(result.guidance.instructions[:3]):
-                print(f"  {i+1}. {inst.instruction}")
-                print(f"     Distance: {inst.distance_m}m, Duration: {inst.duration_s}s")
-                print(f"     Maneuver: {inst.maneuver}")
+                print(MCPDetailedRouteLogMessages.GUIDANCE_STEP.format(step=i+1, instruction=inst.instruction))
+                print(MCPDetailedRouteLogMessages.GUIDANCE_DISTANCE_DURATION.format(distance=inst.distance_m, duration=inst.duration_s))
+                print(MCPDetailedRouteLogMessages.GUIDANCE_MANEUVER.format(maneuver=inst.maneuver))
                 if inst.road_name:
-                    print(f"     Road: {inst.road_name}")
-                print(f"     Point: ({inst.point.lat}, {inst.point.lon})")
+                    print(MCPDetailedRouteLogMessages.GUIDANCE_ROAD.format(road_name=inst.road_name))
+                print(MCPDetailedRouteLogMessages.GUIDANCE_POINT.format(lat=inst.point.lat, lon=inst.point.lon))
         
         # Convert to dict format - chỉ trả về guidance instructions (chỉ dẫn theo tuyến đường)
         response_dict = {
@@ -512,26 +515,26 @@ async def get_detailed_route_tool(
         }
         
         # Log the final response dict
-        print(f"\n📤 Final MCP Response:")
-        print(f"   Summary: {response_dict['summary']}")
-        print(f"   Route instructions count: {len(response_dict['route_instructions'])}")
-        print(f"   Route legs count: {len(response_dict['route_legs'])}")
-        print(f"   Traffic sections count: {len(response_dict['traffic_sections'])}")
+        print(MCPDetailedRouteLogMessages.FINAL_RESPONSE_HEADER)
+        print(MCPDetailedRouteLogMessages.SUMMARY_LOG.format(summary=response_dict['summary']))
+        print(MCPDetailedRouteLogMessages.ROUTE_INSTRUCTIONS_COUNT.format(count=len(response_dict['route_instructions'])))
+        print(MCPDetailedRouteLogMessages.ROUTE_LEGS_COUNT.format(count=len(response_dict['route_legs'])))
+        print(MCPDetailedRouteLogMessages.TRAFFIC_SECTIONS_COUNT.format(count=len(response_dict['traffic_sections'])))
         
         # Show first few route instructions
         if response_dict['route_instructions']:
-            print(f"\n🛣️ First 3 Route Instructions:")
+            print(MCPDetailedRouteLogMessages.ROUTE_INSTRUCTIONS_HEADER)
             for inst in response_dict['route_instructions'][:3]:
-                print(f"   Step {inst['step']}: {inst['instruction']}")
-                print(f"   Distance: {inst['distance_m']}m, Duration: {inst['duration_s']}s")
-                print(f"   Maneuver: {inst['maneuver']}")
+                print(MCPDetailedRouteLogMessages.ROUTE_STEP.format(step=inst['step'], instruction=inst['instruction']))
+                print(MCPDetailedRouteLogMessages.ROUTE_DISTANCE_DURATION.format(distance=inst['distance_m'], duration=inst['duration_s']))
+                print(MCPDetailedRouteLogMessages.ROUTE_MANEUVER.format(maneuver=inst['maneuver']))
                 if inst['road_name']:
-                    print(f"   Road: {inst['road_name']}")
+                    print(MCPDetailedRouteLogMessages.ROUTE_ROAD.format(road_name=inst['road_name']))
         
         return response_dict
     except Exception as e:
-        print(f"\n❌ Error in get_detailed_route: {str(e)}")
-        return {"error": f"Get detailed route failed: {str(e)}"}
+        print(MCPDetailedRouteLogMessages.ERROR_HEADER.format(error=str(e)))
+        return {"error": MCPToolErrorMessages.GET_DETAILED_ROUTE_FAILED.format(error=str(e))}
 
 # Traffic recommendations đã được chuyển vào TrafficMapper trong ACL layer
         
@@ -551,7 +554,8 @@ def main():
         all_tools = (MCPServerConstants.ROUTING_TOOLS + 
                     MCPServerConstants.GEOCODING_TOOLS + 
                     MCPServerConstants.TRAFFIC_TOOLS + 
-                    MCPServerConstants.COMPOSITE_TOOLS)
+                    MCPServerConstants.COMPOSITE_TOOLS +
+                    MCPServerConstants.DESTINATION_TOOLS)
         
         print(f"🛠️  Available tools ({len(all_tools)}):")
         print(f"   • calculate_route - {MCPToolDescriptions.CALCULATE_ROUTE}")
@@ -563,6 +567,11 @@ def main():
         print(f"   • get_via_route - {MCPToolDescriptions.GET_VIA_ROUTE}")
         print(f"   • analyze_route_traffic - {MCPToolDescriptions.ANALYZE_ROUTE_TRAFFIC}")
         print(f"   • check_traffic_between_addresses - {MCPToolDescriptions.CHECK_TRAFFIC_BETWEEN_ADDRESSES}")
+        print(f"   • get_detailed_route - {MCPToolDescriptions.GET_DETAILED_ROUTE}")
+        print(f"   • save_destination - {MCPToolDescriptions.SAVE_DESTINATION}")
+        print(f"   • list_destinations - {MCPToolDescriptions.LIST_DESTINATIONS}")
+        print(f"   • delete_destination - {MCPToolDescriptions.DELETE_DESTINATION}")
+        print(f"   • update_destination - {MCPToolDescriptions.UPDATE_DESTINATION}")
         print("=" * 60)
         print(f"🌐 Transport: {MCPServerConstants.DEFAULT_TRANSPORT}")
         print(f"📡 Endpoint: http://{config.server_host}:{config.server_port}")

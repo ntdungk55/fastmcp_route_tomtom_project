@@ -8,6 +8,7 @@ from app.application.dto.geocoding_dto import (
 from app.application.ports.geocoding_provider import GeocodingProvider
 from app.infrastructure.http.client import AsyncApiClient
 from app.infrastructure.http.http_method import HttpMethod
+from app.domain.constants.api_constants import CountryConstants
 from app.infrastructure.http.request_entity import RequestEntity
 from app.infrastructure.tomtom.acl.geocoding_mapper import TomTomGeocodingMapper
 from app.infrastructure.tomtom.endpoint import (
@@ -96,7 +97,7 @@ class TomTomGeocodingAdapter(GeocodingProvider):
     async def search_street_center(
         self, 
         street_name: str, 
-        country_set: str = "VN",
+        country_set: str = CountryConstants.DEFAULT,
         language: str = "vi-VN"
     ) -> GeocodeResponseDTO:
         """Tìm tọa độ trung tâm của đường phố.

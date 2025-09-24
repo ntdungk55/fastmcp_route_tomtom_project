@@ -12,6 +12,9 @@ class TravelModeConstants:
     FOOT = "foot"
     MOTORCYCLE = "motorcycle"
     
+    # Literal type cho MCP tools - sử dụng constants
+    MCP_TRAVEL_MODES = [CAR, BICYCLE, FOOT]
+    
     # Mapping từ domain travel mode sang TomTom API values
     TOMTOM_MAPPING = {
         CAR: "car",
@@ -24,6 +27,11 @@ class TravelModeConstants:
     def get_all_values(cls) -> List[str]:
         """Lấy tất cả travel mode values."""
         return [cls.CAR, cls.BICYCLE, cls.FOOT, cls.MOTORCYCLE]
+    
+    @classmethod
+    def get_mcp_travel_modes(cls) -> List[str]:
+        """Lấy travel modes cho MCP tools."""
+        return cls.MCP_TRAVEL_MODES
     
     @classmethod
     def get_tomtom_value(cls, domain_value: str) -> str:
