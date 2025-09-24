@@ -44,23 +44,16 @@ from app.application.dto.traffic_dto import (
 from app.di.container import Container
 from fastmcp import FastMCP
 
+# Constants
+from app.domain.constants.api_constants import LanguageConstants, CountryConstants, LimitConstants
+from app.application.constants.validation_constants import DefaultValues
+from app.interfaces.constants.mcp_constants import MCPServerConstants, MCPToolDescriptions, MCPErrorMessages, MCPSuccessMessages
+
 # FastMCP instance
-mcp = FastMCP("RouteMCP_TomTom_CleanArch")
+mcp = FastMCP(MCPServerConstants.SERVER_NAME)
 
 # Container instance với Dependency Injection
 _container = Container()
-
-# Global API key - loaded once at startup
-API_KEY = os.getenv("TOMTOM_API_KEY")
-
-def safe_float_convert(value: Union[str, float, int]) -> float:
-    """Convert string, int, or float to float safely."""
-    if isinstance(value, (int, float)):
-        return float(value)
-    try:
-        return float(str(value).strip())
-    except (ValueError, TypeError) as e:
-        raise ValueError(f"Cannot convert '{value}' to float: {e}")
 
 # FastMCP tool definitions
 @mcp.tool(name="calculate_route")
@@ -73,10 +66,11 @@ async def calculate_route_tool(
 ) -> dict:
     """Calculate a route (TomTom Routing API) and return a JSON summary."""
     try:
-        origin_lat_float = safe_float_convert(origin_lat)
-        origin_lon_float = safe_float_convert(origin_lon)
-        dest_lat_float = safe_float_convert(dest_lat)
-        dest_lon_float = safe_float_convert(dest_lon)
+        validation_service = _container.validation_service
+        origin_lat_float = validation_service.safe_float_convert(origin_lat)
+        origin_lon_float = validation_service.safe_float_convert(origin_lon)
+        dest_lat_float = validation_service.safe_float_convert(dest_lat)
+        dest_lon_float = validation_service.safe_float_convert(dest_lon)
         
         cmd = CalculateRouteCommand(
             origin=LatLon(origin_lat_float, origin_lon_float),
@@ -94,9 +88,9 @@ async def calculate_route_tool(
 @mcp.tool(name="geocode_address")
 async def geocode_address_tool(
     address: str,
-    country_set: str = "VN",
-    limit: int = 1,
-    language: str = "vi-VN"
+    country_set: str = CountryConstants.DEFAULT,
+    limit: int = LimitConstants.DEFAULT_GEOCODING_LIMIT,
+    language: str = LanguageConstants.DEFAULT
 ) -> dict:
     """Chuyển đổi địa chỉ thành tọa độ (sử dụng Clean Architecture)."""
     try:
@@ -127,17 +121,18 @@ async def get_route_with_traffic_tool(
     origin_lon: Union[str, float],
     dest_lat: Union[str, float],
     dest_lon: Union[str, float],
-    travel_mode: str = "motorcycle",
-    route_type: str = "fastest",
-    max_alternatives: int = 1,
-    language: str = "vi-VN"
+    travel_mode: str = DefaultValues.DEFAULT_TRAVEL_MODE,
+    route_type: str = DefaultValues.DEFAULT_ROUTE_TYPE,
+    max_alternatives: int = DefaultValues.DEFAULT_MAX_ALTERNATIVES,
+    language: str = LanguageConstants.DEFAULT
 ) -> dict:
     """Tính toán tuyến đường có kèm thông tin giao thông (sử dụng Clean Architecture)."""
     try:
         # Sử dụng Route with Traffic Use Case
+        validation_service = _container.validation_service
         cmd = RouteWithTrafficCommandDTO(
-            origin=LatLon(safe_float_convert(origin_lat), safe_float_convert(origin_lon)),
-            destination=LatLon(safe_float_convert(dest_lat), safe_float_convert(dest_lon)),
+            origin=LatLon(validation_service.safe_float_convert(origin_lat), validation_service.safe_float_convert(origin_lon)),
+            destination=LatLon(validation_service.safe_float_convert(dest_lat), validation_service.safe_float_convert(dest_lon)),
             travel_mode=travel_mode,
             route_type=route_type,
             max_alternatives=max_alternatives,
@@ -160,7 +155,7 @@ async def get_intersection_position_tool(
     municipality: str,
     country_code: str = "VN",
     limit: int = 1,
-    language: str = "vi-VN"
+    language: str = LanguageConstants.DEFAULT
 ) -> dict:
     """Tìm tọa độ giao lộ (sử dụng Clean Architecture)."""
     try:
@@ -191,7 +186,7 @@ async def get_intersection_position_tool(
 async def get_street_center_position_tool(
     street_name: str,
     country_set: str = "VN",
-    language: str = "vi-VN"
+    language: str = LanguageConstants.DEFAULT
 ) -> dict:
     """Tìm tọa độ trung tâm đường phố (sử dụng Clean Architecture)."""
     try:
@@ -216,12 +211,13 @@ async def get_street_center_position_tool(
 async def get_traffic_condition_tool(
     latitude: Union[str, float],
     longitude: Union[str, float],
-    zoom: int = 10
+    zoom: int = LimitConstants.DEFAULT_TRAFFIC_ZOOM
 ) -> dict:
     """Lấy thông tin tình trạng giao thông (sử dụng Clean Architecture)."""
     try:
         # Chuyển đổi tọa độ và sử dụng Traffic Use Case
-        location = LatLon(safe_float_convert(latitude), safe_float_convert(longitude))
+        validation_service = _container.validation_service
+        location = LatLon(validation_service.safe_float_convert(latitude), validation_service.safe_float_convert(longitude))
         cmd = TrafficConditionCommandDTO(location=location, zoom=zoom)
         
         result = await _container.get_traffic_condition.handle(cmd)
@@ -243,16 +239,17 @@ async def get_via_route_tool(
     via_lon: Union[str, float],
     dest_lat: Union[str, float],
     dest_lon: Union[str, float],
-    travel_mode: str = "motorcycle",
-    language: str = "vi-VN"
+    travel_mode: str = DefaultValues.DEFAULT_TRAVEL_MODE,
+    language: str = LanguageConstants.DEFAULT
 ) -> dict:
     """Tính toán tuyến đường qua điểm trung gian A → B → C (sử dụng Clean Architecture)."""
     try:
         # Sử dụng Via Route Use Case
+        validation_service = _container.validation_service
         cmd = ViaRouteCommandDTO(
-            origin=LatLon(safe_float_convert(origin_lat), safe_float_convert(origin_lon)),
-            via_point=LatLon(safe_float_convert(via_lat), safe_float_convert(via_lon)),
-            destination=LatLon(safe_float_convert(dest_lat), safe_float_convert(dest_lon)),
+            origin=LatLon(validation_service.safe_float_convert(origin_lat), validation_service.safe_float_convert(origin_lon)),
+            via_point=LatLon(validation_service.safe_float_convert(via_lat), validation_service.safe_float_convert(via_lon)),
+            destination=LatLon(validation_service.safe_float_convert(dest_lat), validation_service.safe_float_convert(dest_lon)),
             travel_mode=travel_mode,
             language=language
         )
@@ -272,14 +269,15 @@ async def analyze_route_traffic_tool(
     origin_lon: Union[str, float],
     dest_lat: Union[str, float],
     dest_lon: Union[str, float],
-    language: str = "vi-VN"
+    language: str = LanguageConstants.DEFAULT
 ) -> dict:
     """Phân tích tình trạng giao thông trên tuyến đường (sử dụng Clean Architecture)."""
     try:
         # Sử dụng Traffic Analysis Use Case
+        validation_service = _container.validation_service
         cmd = TrafficAnalysisCommandDTO(
-            origin=LatLon(safe_float_convert(origin_lat), safe_float_convert(origin_lon)),
-            destination=LatLon(safe_float_convert(dest_lat), safe_float_convert(dest_lon)),
+            origin=LatLon(validation_service.safe_float_convert(origin_lat), validation_service.safe_float_convert(origin_lon)),
+            destination=LatLon(validation_service.safe_float_convert(dest_lat), validation_service.safe_float_convert(dest_lon)),
             language=language
         )
         
@@ -298,7 +296,7 @@ async def check_traffic_between_addresses_tool(
     destination_address: str,
     country_set: str = "VN",
     travel_mode: str = "car",
-    language: str = "vi-VN"
+    language: str = LanguageConstants.DEFAULT
 ) -> dict:
     """Kiểm tra tình trạng giao thông giữa hai địa chỉ (sử dụng Clean Architecture)."""
     try:
@@ -324,39 +322,47 @@ def main():
     """Start the TomTom MCP server với Clean Architecture."""
     print("🚀 Starting TomTom Route MCP Server (Clean Architecture)...")
 
-    # Check required environment variables
-    if not API_KEY:
-        print("❌ ERROR: TOMTOM_API_KEY environment variable is required!")
+    try:
+        # Lấy configuration từ config service
+        config = _container.config_service.get_config()
+        
+        print(MCPSuccessMessages.API_KEY_CONFIGURED)
+        print("🏠 Architecture: Clean Architecture với Use Cases & Ports/Adapters")
+        print("🔌 Dependency Injection: Container pattern")
+        
+        # Tool count
+        all_tools = (MCPServerConstants.ROUTING_TOOLS + 
+                    MCPServerConstants.GEOCODING_TOOLS + 
+                    MCPServerConstants.TRAFFIC_TOOLS + 
+                    MCPServerConstants.COMPOSITE_TOOLS)
+        
+        print(f"🛠️  Available tools ({len(all_tools)}):")
+        print(f"   • calculate_route - {MCPToolDescriptions.CALCULATE_ROUTE}")
+        print(f"   • geocode_address - {MCPToolDescriptions.GEOCODE_ADDRESS}")
+        print(f"   • get_intersection_position - {MCPToolDescriptions.GET_INTERSECTION_POSITION}")
+        print(f"   • get_street_center_position - {MCPToolDescriptions.GET_STREET_CENTER_POSITION}")
+        print(f"   • get_traffic_condition - {MCPToolDescriptions.GET_TRAFFIC_CONDITION}")
+        print(f"   • get_route_with_traffic - {MCPToolDescriptions.GET_ROUTE_WITH_TRAFFIC}")
+        print(f"   • get_via_route - {MCPToolDescriptions.GET_VIA_ROUTE}")
+        print(f"   • analyze_route_traffic - {MCPToolDescriptions.ANALYZE_ROUTE_TRAFFIC}")
+        print(f"   • check_traffic_between_addresses - {MCPToolDescriptions.CHECK_TRAFFIC_BETWEEN_ADDRESSES}")
+        print("=" * 60)
+        print(f"🌐 Transport: {MCPServerConstants.DEFAULT_TRANSPORT}")
+        print(f"📡 Endpoint: http://{config.server_host}:{config.server_port}")
+        print("=" * 60)
+
+        # Run the FastMCP server with HTTP Streamable transport
+        mcp.run(transport=MCPServerConstants.DEFAULT_TRANSPORT, port=config.server_port, host=config.server_host)
+    except ValueError as e:
+        print(MCPErrorMessages.CONFIG_ERROR.format(error=e))
         print("Please set your TomTom API key:")
         print("  Windows: $env:TOMTOM_API_KEY='your_api_key_here'")
         print("  Linux/Mac: export TOMTOM_API_KEY='your_api_key_here'")
         sys.exit(1)
-
-    print("✅ TomTom API key configured")
-    print("🏠 Architecture: Clean Architecture với Use Cases & Ports/Adapters")
-    print("🔌 Dependency Injection: Container pattern")
-    print("🛠️  Available tools:")
-    print("   • calculate_route - Tính toán tuyến đường cơ bản")
-    print("   • geocode_address - Chuyển địa chỉ thành tọa độ")
-    print("   • get_intersection_position - Tìm tọa độ giao lộ")
-    print("   • get_street_center_position - Tìm trung tâm đường phố")
-    print("   • get_traffic_condition - Lấy thông tin giao thông")
-    print("   • get_route_with_traffic - Tuyến đường có traffic")
-    print("   • get_via_route - Tuyến đường qua điểm trung gian")
-    print("   • analyze_route_traffic - Phân tích traffic tuyến đường")
-    print("   • check_traffic_between_addresses - Kiểm tra traffic giữa địa chỉ")
-    print("=" * 60)
-    print("🌐 Transport: HTTP Streamable")
-    print("📡 Endpoint: http://192.168.1.3:8081")
-    print("=" * 60)
-
-    # Run the FastMCP server with HTTP Streamable transport
-    try:
-        mcp.run(transport="streamable-http", port=8081, host="192.168.1.3")
     except KeyboardInterrupt:
-        print("\n👋 Server stopped by user")
+        print(f"\n{MCPSuccessMessages.SERVER_STOPPED}")
     except Exception as e:
-        print(f"❌ Error starting server: {e}")
+        print(MCPErrorMessages.SERVER_STARTUP_ERROR.format(error=e))
         sys.exit(1)
 
 if __name__ == "__main__":

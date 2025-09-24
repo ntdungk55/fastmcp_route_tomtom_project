@@ -17,6 +17,11 @@ from app.infrastructure.tomtom.adapters.geocoding_adapter import TomTomGeocoding
 from app.infrastructure.tomtom.adapters.routing_adapter import TomTomRoutingAdapter
 from app.infrastructure.tomtom.adapters.traffic_adapter import TomTomTrafficAdapter
 
+# Services
+from app.application.services.validation_service import get_validation_service
+from app.application.services.request_handler import get_request_handler_service
+from app.infrastructure.config.api_config import get_config_service
+
 
 class Container:
     """DI Container quản lý tất cả dependencies theo Clean Architecture.
@@ -33,6 +38,11 @@ class Container:
 
         # Infrastructure layer - HTTP client
         self.http = AsyncApiClient()
+        
+        # Services
+        self.config_service = get_config_service()
+        self.validation_service = get_validation_service()
+        self.request_handler = get_request_handler_service()
         
         # Infrastructure layer - TomTom Adapters
         self._init_adapters()
