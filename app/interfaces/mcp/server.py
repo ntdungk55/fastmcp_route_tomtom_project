@@ -32,6 +32,7 @@ from app.application.dto.geocoding_dto import (
     GeocodeAddressCommandDTO,
     StructuredGeocodeCommandDTO,
 )
+from app.application.dto.save_destination_dto import SaveDestinationRequest
 from app.application.dto.traffic_dto import (
     AddressTrafficCommandDTO,
     RouteWithTrafficCommandDTO,
@@ -42,6 +43,7 @@ from app.application.dto.traffic_dto import (
 
 # DI Container
 from app.di.container import Container
+from app.application.use_cases.save_destination import SaveDestinationUseCase
 from fastmcp import FastMCP
 
 # Constants
@@ -315,6 +317,26 @@ async def check_traffic_between_addresses_tool(
         return asdict(result)
     except Exception as e:
         return {"error": f"Address traffic check failed: {str(e)}"}
+
+@mcp.tool(name="save_destination")
+async def save_destination_tool(
+    name: str,
+    address: str
+) -> dict:
+    """Lưu điểm đến để sử dụng sau này (tự động tìm tọa độ bằng TomTom API)."""
+    try:
+        # Sử dụng Save Destination Use Case
+        request = SaveDestinationRequest(
+            name=name,
+            address=address
+        )
+        
+        result = await _container.save_destination.execute(request)
+        
+        # Trả về response dưới dạng dict
+        return asdict(result)
+    except Exception as e:
+        return {"error": f"Save destination failed: {str(e)}"}
 
 # Traffic recommendations đã được chuyển vào TrafficMapper trong ACL layer
         

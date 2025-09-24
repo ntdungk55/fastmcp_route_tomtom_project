@@ -1,4 +1,8 @@
-"""Dependency Injection Container - Wire tất cả dependencies."""
+"""Dependency Injection Container - Wire tất cả dependencies theo Clean Architecture v5."""
+
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
 
 # Use Cases
 from app.application.use_cases.analyze_route_traffic import AnalyzeRouteTraffic
@@ -8,8 +12,10 @@ from app.application.use_cases.geocode_address import GeocodeAddress
 from app.application.use_cases.get_intersection_position import GetIntersectionPosition
 from app.application.use_cases.get_street_center import GetStreetCenter
 from app.application.use_cases.get_traffic_condition import GetTrafficCondition
+from app.application.use_cases.save_destination import SaveDestinationUseCase
 
 # Infrastructure
+from app.infrastructure.adapters.memory_destination_repository import MemoryDestinationRepository
 from app.infrastructure.config.settings import Settings
 from app.infrastructure.http.client import AsyncApiClient
 from app.infrastructure.logging.logger import get_logger
@@ -24,11 +30,14 @@ from app.infrastructure.config.api_config import get_config_service
 
 
 class Container:
-    """DI Container quản lý tất cả dependencies theo Clean Architecture.
+    """DI Container quản lý tất cả dependencies theo Clean Architecture v5.
     
     Chức năng: Wire các Use Cases với Adapters và cung cấp dependencies
-    Kiến trúc: Dependency Injection pattern với lazy initialization
+    Kiến trúc: Dependency Injection pattern với providers, scopes, factories
     """
+    
+    # Type annotations for linter
+    save_destination: 'SaveDestinationUseCase'
     
     def __init__(self, settings: Settings | None = None):
         """Khởi tạo container với settings."""
@@ -46,6 +55,9 @@ class Container:
         
         # Infrastructure layer - TomTom Adapters
         self._init_adapters()
+        
+        # Infrastructure layer - Repositories
+        self._init_repositories()
         
         # Application layer - Use Cases
         self._init_use_cases()
@@ -68,6 +80,10 @@ class Container:
         # Traffic adapter (mới)
         self.traffic_adapter = TomTomTrafficAdapter(**base_config)
     
+    def _init_repositories(self):
+        """Khởi tạo tất cả repositories."""
+        self.destination_repository = MemoryDestinationRepository()
+    
     def _init_use_cases(self):
         """Khởi tạo tất cả Use Cases với dependency injection."""
         
@@ -87,4 +103,10 @@ class Container:
         self.check_address_traffic = CheckAddressTraffic(
             geocoding=self.geocoding_adapter,
             traffic=self.traffic_adapter
+        )
+        
+        # Destination Use Cases
+        self.save_destination = SaveDestinationUseCase(
+            destination_repository=self.destination_repository,
+            geocoding_provider=self.geocoding_adapter
         )
