@@ -20,11 +20,11 @@ class DomainProvider:
         name: str,
         address: str,
         coordinates: LatLon,
-        destination_id: str = None
+        destination_id: str | None = None
     ) -> Destination:
         """Create Destination entity."""
-        from datetime import datetime
-        now = datetime.utcnow()
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
         
         return Destination(
             id=destination_id,

@@ -1,5 +1,5 @@
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 from app.application.dto.save_destination_dto import SaveDestinationRequest, SaveDestinationResponse
@@ -57,7 +57,7 @@ class SaveDestinationUseCase:
             logger.info(f"Found coordinates: {coordinates.lat}, {coordinates.lon}")
             
             # Create destination entity
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             destination = Destination(
                 id=None,  # Will be set by repository
                 name=request.name.strip(),

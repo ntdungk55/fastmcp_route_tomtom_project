@@ -8,14 +8,19 @@ load_dotenv()
 from app.application.use_cases.analyze_route_traffic import AnalyzeRouteTraffic
 from app.application.use_cases.calculate_route import CalculateRoute
 from app.application.use_cases.check_address_traffic import CheckAddressTraffic
+from app.application.use_cases.delete_destination import DeleteDestinationUseCase
 from app.application.use_cases.geocode_address import GeocodeAddress
 from app.application.use_cases.get_intersection_position import GetIntersectionPosition
 from app.application.use_cases.get_street_center import GetStreetCenter
 from app.application.use_cases.get_traffic_condition import GetTrafficCondition
+from app.application.use_cases.list_destinations import ListDestinationsUseCase
 from app.application.use_cases.save_destination import SaveDestinationUseCase
+from app.application.use_cases.update_destination import UpdateDestinationUseCase
 
 # Infrastructure
 from app.infrastructure.adapters.memory_destination_repository import MemoryDestinationRepository
+from app.infrastructure.persistence.repositories.sqlite_destination_repository import SQLiteDestinationRepository
+from app.infrastructure.persistence.migrations.create_destinations_table import run_migrations
 from app.infrastructure.config.settings import Settings
 from app.infrastructure.http.client import AsyncApiClient
 from app.infrastructure.logging.logger import get_logger
@@ -62,6 +67,15 @@ class Container:
         # Application layer - Use Cases
         self._init_use_cases()
     
+    async def initialize_database(self):
+        """Initialize database with migrations (async)."""
+        try:
+            await run_migrations()
+            self.logger.info("Database initialized successfully")
+        except Exception as e:
+            self.logger.error(f"Failed to initialize database: {str(e)}")
+            raise
+    
     def _init_adapters(self):
         """Khởi tạo tất cả TomTom adapters."""
         base_config = {
@@ -82,7 +96,11 @@ class Container:
     
     def _init_repositories(self):
         """Khởi tạo tất cả repositories."""
-        self.destination_repository = MemoryDestinationRepository()
+        # Use SQLite repository instead of memory repository
+        self.destination_repository = SQLiteDestinationRepository(
+            database_path=self.settings.database_path
+        )
+    
     
     def _init_use_cases(self):
         """Khởi tạo tất cả Use Cases với dependency injection."""
@@ -107,6 +125,12 @@ class Container:
         
         # Destination Use Cases
         self.save_destination = SaveDestinationUseCase(
+            destination_repository=self.destination_repository,
+            geocoding_provider=self.geocoding_adapter
+        )
+        self.list_destinations = ListDestinationsUseCase(self.destination_repository)
+        self.delete_destination = DeleteDestinationUseCase(self.destination_repository)
+        self.update_destination = UpdateDestinationUseCase(
             destination_repository=self.destination_repository,
             geocoding_provider=self.geocoding_adapter
         )

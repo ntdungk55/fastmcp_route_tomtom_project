@@ -18,6 +18,9 @@ class Settings(BaseModel):
     log_level: str = Field(
         default_factory=lambda: os.getenv("LOG_LEVEL", "INFO")
     )
+    database_path: str = Field(
+        default_factory=lambda: os.getenv("DATABASE_PATH", "app/infrastructure/persistence/database/destinations.db")
+    )
 
     @field_validator('tomtom_base_url')
     @classmethod

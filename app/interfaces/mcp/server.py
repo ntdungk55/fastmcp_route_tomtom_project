@@ -33,6 +33,9 @@ from app.application.dto.geocoding_dto import (
     StructuredGeocodeCommandDTO,
 )
 from app.application.dto.save_destination_dto import SaveDestinationRequest
+from app.application.dto.list_destinations_dto import ListDestinationsRequest
+from app.application.dto.delete_destination_dto import DeleteDestinationRequest
+from app.application.dto.update_destination_dto import UpdateDestinationRequest
 from app.application.dto.traffic_dto import (
     AddressTrafficCommandDTO,
     RouteWithTrafficCommandDTO,
@@ -337,6 +340,58 @@ async def save_destination_tool(
         return asdict(result)
     except Exception as e:
         return {"error": f"Save destination failed: {str(e)}"}
+
+@mcp.tool(name="list_destinations")
+async def list_destinations_tool() -> dict:
+    """Liệt kê tất cả điểm đến đã lưu."""
+    try:
+        # Sử dụng List Destinations Use Case
+        request = ListDestinationsRequest()
+        
+        result = await _container.list_destinations.execute(request)
+        
+        # Trả về response dưới dạng dict
+        return asdict(result)
+    except Exception as e:
+        return {"error": f"List destinations failed: {str(e)}"}
+
+@mcp.tool(name="delete_destination")
+async def delete_destination_tool(
+    destination_id: str
+) -> dict:
+    """Xóa điểm đến theo ID."""
+    try:
+        # Sử dụng Delete Destination Use Case
+        request = DeleteDestinationRequest(destination_id=destination_id)
+        
+        result = await _container.delete_destination.execute(request)
+        
+        # Trả về response dưới dạng dict
+        return asdict(result)
+    except Exception as e:
+        return {"error": f"Delete destination failed: {str(e)}"}
+
+@mcp.tool(name="update_destination")
+async def update_destination_tool(
+    destination_id: str,
+    name: str | None = None,
+    address: str | None = None
+) -> dict:
+    """Cập nhật điểm đến (tên hoặc địa chỉ)."""
+    try:
+        # Sử dụng Update Destination Use Case
+        request = UpdateDestinationRequest(
+            destination_id=destination_id,
+            name=name,
+            address=address
+        )
+        
+        result = await _container.update_destination.execute(request)
+        
+        # Trả về response dưới dạng dict
+        return asdict(result)
+    except Exception as e:
+        return {"error": f"Update destination failed: {str(e)}"}
 
 # Traffic recommendations đã được chuyển vào TrafficMapper trong ACL layer
         
