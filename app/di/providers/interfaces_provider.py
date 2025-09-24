@@ -62,6 +62,22 @@ class InterfacesProvider:
             "check_traffic_between_addresses": {
                 "name": "check_traffic_between_addresses",
                 "description": "Check traffic between addresses"
+            },
+            "get_detailed_route": {
+                "name": "get_detailed_route",
+                "description": "Get detailed route between two addresses using saved destinations if available"
+            },
+            "list_destinations": {
+                "name": "list_destinations",
+                "description": "List all saved destinations"
+            },
+            "delete_destination": {
+                "name": "delete_destination",
+                "description": "Delete destination by ID"
+            },
+            "update_destination": {
+                "name": "update_destination",
+                "description": "Update destination information"
             }
         }
     

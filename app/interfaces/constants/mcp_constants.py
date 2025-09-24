@@ -24,7 +24,8 @@ class MCPServerConstants:
     ROUTING_TOOLS = ["calculate_route"]
     GEOCODING_TOOLS = ["geocode_address", "get_intersection_position", "get_street_center_position"]
     TRAFFIC_TOOLS = ["get_traffic_condition", "get_route_with_traffic", "analyze_route_traffic"]
-    COMPOSITE_TOOLS = ["get_via_route", "check_traffic_between_addresses"]
+    COMPOSITE_TOOLS = ["get_via_route", "check_traffic_between_addresses", "get_detailed_route"]
+    DESTINATION_TOOLS = ["save_destination", "list_destinations", "delete_destination", "update_destination"]
 
 
 class MCPToolDescriptions:
@@ -38,6 +39,11 @@ class MCPToolDescriptions:
     GET_VIA_ROUTE = "Tính toán tuyến đường qua điểm trung gian A → B → C"
     ANALYZE_ROUTE_TRAFFIC = "Phân tích tình trạng giao thông trên tuyến đường"
     CHECK_TRAFFIC_BETWEEN_ADDRESSES = "Kiểm tra tình trạng giao thông giữa các địa chỉ"
+    GET_DETAILED_ROUTE = "Tính toán tuyến đường chi tiết giữa hai địa chỉ, sử dụng dữ liệu đã lưu nếu có sẵn"
+    SAVE_DESTINATION = "Lưu điểm đến với geocoding tự động"
+    LIST_DESTINATIONS = "Liệt kê tất cả điểm đến đã lưu"
+    DELETE_DESTINATION = "Xóa điểm đến theo ID"
+    UPDATE_DESTINATION = "Cập nhật thông tin điểm đến"
 
 
 class MCPErrorMessages:

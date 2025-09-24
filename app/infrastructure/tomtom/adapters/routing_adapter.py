@@ -47,6 +47,7 @@ class TomTomRoutingAdapter(RoutingProvider):
                 "key": self._api_key,
                 "traffic": "true",  # Bật thông tin giao thông realtime
                 "sectionType": "traffic",  # Chia route theo traffic sections
+                "instructionsType": "text",  # Lấy hướng dẫn dạng text
                 "travelMode": travel_mode,
                 "maxAlternatives": "0",  # Chỉ lấy 1 route tốt nhất
             },
@@ -56,3 +57,39 @@ class TomTomRoutingAdapter(RoutingProvider):
         # Gửi request và chuyển đổi response thành domain RoutePlan
         payload = await self._http.send(req)
         return self._mapper.to_domain_route_plan(payload)
+    
+    async def calculate_route_with_guidance(self, cmd: CalculateRouteCommand) -> dict:
+        """Tính toán tuyến đường với guidance chi tiết.
+        
+        Đầu vào: CalculateRouteCommand chứa điểm đi, điểm đến, phương tiện
+        Đầu ra: dict - Route plan với guidance và instructions chi tiết
+        Xử lý: Gọi TomTom Routing API với guidance=true để có hướng dẫn chi tiết
+        """
+        # Chuyển đổi tọa độ thành format string cho TomTom API
+        origin = f"{cmd.origin.lat},{cmd.origin.lon}"
+        dest = f"{cmd.destination.lat},{cmd.destination.lon}"
+        path = CALCULATE_ROUTE_PATH.format(origin=origin, destination=dest)
+        
+        # Map travel mode từ domain enum sang TomTom format
+        travel_mode = DEFAULT_TRAVEL_MODE.get(cmd.travel_mode.value, "car")
+        
+        # Tạo HTTP request với các tham số routing và guidance
+        req = RequestEntity(
+            method=HttpMethod.GET,
+            url=f"{self._base_url}{path}",
+            headers={"Accept": "application/json"},
+            params={
+                "key": self._api_key,
+                "traffic": "true",  # Bật thông tin giao thông realtime
+                "sectionType": "traffic",  # Chia route theo traffic sections
+                "instructionsType": "text",  # Lấy hướng dẫn dạng text
+                "travelMode": travel_mode,
+                "maxAlternatives": "0",  # Chỉ lấy 1 route tốt nhất
+            },
+            json=None,
+            timeout_sec=self._timeout_sec,
+        )
+        
+        # Gửi request và chuyển đổi response thành dict với guidance
+        payload = await self._http.send(req)
+        return self._mapper.to_domain_route_plan_with_guidance(payload)

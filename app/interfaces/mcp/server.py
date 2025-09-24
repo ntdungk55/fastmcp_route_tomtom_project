@@ -28,6 +28,7 @@ from app.domain.value_objects.latlon import LatLon
 
 # Application DTOs
 from app.application.dto.calculate_route_dto import CalculateRouteCommand
+from app.application.dto.detailed_route_dto import DetailedRouteRequest
 from app.application.dto.geocoding_dto import (
     GeocodeAddressCommandDTO,
     StructuredGeocodeCommandDTO,
@@ -83,11 +84,20 @@ async def calculate_route_tool(
             travel_mode=TravelMode(travel_mode),
         )
         plan = await _container.calculate_route.handle(cmd)
-        return {
+        result = {
             "summary": asdict(plan.summary),
             "sections": [asdict(s) for s in plan.sections],
         }
+        
+        # Log the result
+        print(f"\n🔍 MCP Server Response for calculate_route:")
+        print(f"📏 Distance: {plan.summary.distance_m:,} meters")
+        print(f"⏱️ Duration: {plan.summary.duration_s:,} seconds")
+        print(f"🚧 Sections: {len(plan.sections)}")
+        
+        return result
     except Exception as e:
+        print(f"\n❌ Error in calculate_route: {str(e)}")
         return {"error": f"Invalid coordinates: {str(e)}"}
 
 @mcp.tool(name="geocode_address")
@@ -392,6 +402,136 @@ async def update_destination_tool(
         return asdict(result)
     except Exception as e:
         return {"error": f"Update destination failed: {str(e)}"}
+
+@mcp.tool(name="get_detailed_route")
+async def get_detailed_route_tool(
+    origin_address: str,
+    destination_address: str,
+    travel_mode: Literal["car", "bicycle", "foot"] = "car",
+    country_set: str = "VN",
+    language: str = "vi-VN"
+) -> dict:
+    """Tính toán tuyến đường chi tiết giữa hai địa chỉ, sử dụng dữ liệu đã lưu nếu có sẵn."""
+    try:
+        # Sử dụng Get Detailed Route Use Case
+        request = DetailedRouteRequest(
+            origin_address=origin_address,
+            destination_address=destination_address,
+            travel_mode=TravelMode(travel_mode),
+            country_set=country_set,
+            language=language
+        )
+        
+        result = await _container.get_detailed_route.handle(request)
+        
+        # Log the result for debugging
+        print(f"\n🔍 MCP Server Response for get_detailed_route:")
+        print(f"📏 Distance: {result.summary.distance_m:,} meters")
+        print(f"⏱️ Duration: {result.summary.duration_s:,} seconds")
+        print(f"🧭 Guidance instructions: {len(result.guidance.instructions)}")
+        print(f"🦵 Route legs: {len(result.legs)}")
+        print(f"📍 Origin: {result.origin.address}")
+        print(f"📍 Destination: {result.destination.address}")
+        
+        # Show first few guidance instructions
+        if result.guidance.instructions:
+            print(f"\n🧭 First 3 Guidance Instructions:")
+            for i, inst in enumerate(result.guidance.instructions[:3]):
+                print(f"  {i+1}. {inst.instruction}")
+                print(f"     Distance: {inst.distance_m}m, Duration: {inst.duration_s}s")
+                print(f"     Maneuver: {inst.maneuver}")
+                if inst.road_name:
+                    print(f"     Road: {inst.road_name}")
+                print(f"     Point: ({inst.point.lat}, {inst.point.lon})")
+        
+        # Convert to dict format - chỉ trả về guidance instructions (chỉ dẫn theo tuyến đường)
+        response_dict = {
+            "summary": {
+                "distance_m": result.summary.distance_m,
+                "duration_s": result.summary.duration_s,
+                "traffic_delay_s": result.summary.traffic_delay_s,
+                "fuel_consumption_l": result.summary.fuel_consumption_l
+            },
+            "route_instructions": [
+                {
+                    "step": i + 1,
+                    "instruction": inst.instruction,
+                    "distance_m": inst.distance_m,
+                    "duration_s": inst.duration_s,
+                    "maneuver": inst.maneuver,
+                    "road_name": inst.road_name,
+                    "point": {
+                        "lat": inst.point.lat,
+                        "lon": inst.point.lon,
+                        "address": inst.point.address
+                    }
+                } for i, inst in enumerate(result.guidance.instructions)
+            ],
+            "waypoints": [
+                {
+                    "lat": wp.lat,
+                    "lon": wp.lon,
+                    "address": wp.address
+                } for wp in result.waypoints
+            ],
+            "origin": {
+                "lat": result.origin.lat,
+                "lon": result.origin.lon,
+                "address": result.origin.address
+            },
+            "destination": {
+                "lat": result.destination.lat,
+                "lon": result.destination.lon,
+                "address": result.destination.address
+            },
+            "traffic_sections": result.traffic_sections,
+            "route_legs": [
+                {
+                    "leg_number": i + 1,
+                    "start_point": {
+                        "lat": leg.start_point.lat,
+                        "lon": leg.start_point.lon,
+                        "address": leg.start_point.address
+                    },
+                    "end_point": {
+                        "lat": leg.end_point.lat,
+                        "lon": leg.end_point.lon,
+                        "address": leg.end_point.address
+                    },
+                    "distance_m": leg.distance_m,
+                    "duration_s": leg.duration_s
+                } for i, leg in enumerate(result.legs)
+            ],
+            "route_geometry": [
+                {
+                    "lat": point.lat,
+                    "lon": point.lon,
+                    "address": point.address
+                } for point in result.route_geometry
+            ] if result.route_geometry else None
+        }
+        
+        # Log the final response dict
+        print(f"\n📤 Final MCP Response:")
+        print(f"   Summary: {response_dict['summary']}")
+        print(f"   Route instructions count: {len(response_dict['route_instructions'])}")
+        print(f"   Route legs count: {len(response_dict['route_legs'])}")
+        print(f"   Traffic sections count: {len(response_dict['traffic_sections'])}")
+        
+        # Show first few route instructions
+        if response_dict['route_instructions']:
+            print(f"\n🛣️ First 3 Route Instructions:")
+            for inst in response_dict['route_instructions'][:3]:
+                print(f"   Step {inst['step']}: {inst['instruction']}")
+                print(f"   Distance: {inst['distance_m']}m, Duration: {inst['duration_s']}s")
+                print(f"   Maneuver: {inst['maneuver']}")
+                if inst['road_name']:
+                    print(f"   Road: {inst['road_name']}")
+        
+        return response_dict
+    except Exception as e:
+        print(f"\n❌ Error in get_detailed_route: {str(e)}")
+        return {"error": f"Get detailed route failed: {str(e)}"}
 
 # Traffic recommendations đã được chuyển vào TrafficMapper trong ACL layer
         
