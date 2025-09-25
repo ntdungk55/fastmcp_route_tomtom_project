@@ -35,11 +35,12 @@ class SaveDestinationUseCase:
             
             # Geocode address to get coordinates
             logger.info(f"Geocoding address: {request.address}")
+            from app.application.constants.validation_constants import DefaultValues
             geocode_cmd = GeocodeAddressCommandDTO(
                 address=request.address,
-                country_set="VN",
-                limit=1,
-                language="vi-VN"
+                country_set=DefaultValues.DEFAULT_COUNTRY,
+                limit=DefaultValues.DEFAULT_LIMIT,
+                language=DefaultValues.DEFAULT_LANGUAGE
             )
             
             geocode_result = await self._geocoding_provider.geocode_address(geocode_cmd)
@@ -72,11 +73,30 @@ class SaveDestinationUseCase:
             
             logger.info(f"Successfully saved destination with ID: {saved_destination.id}")
             
-            return SaveDestinationResponse(
-                success=True,
-                destination_id=saved_destination.id,
-                message=f"Destination '{request.name}' saved successfully at {coordinates.lat}, {coordinates.lon}"
-            )
+            # Verify that the destination was actually saved to database
+            logger.info(f"Verifying destination was saved to database...")
+            if saved_destination.id is None:
+                logger.error("❌ Database verification failed - destination ID is None")
+                return SaveDestinationResponse(
+                    success=False,
+                    error="Database verification failed - destination ID is None"
+                )
+            
+            verification_destination = await self._destination_repository.find_by_id(saved_destination.id)
+            
+            if verification_destination:
+                logger.info("✅ Database verification successful - destination found in database")
+                return SaveDestinationResponse(
+                    success=True,
+                    destination_id=saved_destination.id,
+                    message=f"Destination '{request.name}' saved successfully at {coordinates.lat}, {coordinates.lon}"
+                )
+            else:
+                logger.error("❌ Database verification failed - destination not found in database")
+                return SaveDestinationResponse(
+                    success=False,
+                    error="Database verification failed - destination was not saved properly"
+                )
             
         except ValueError as e:
             logger.error(f"Validation error: {str(e)}")

@@ -15,9 +15,12 @@ class GetStreetCenter:
         self, 
         street_name: str, 
         country_set: str = CountryConstants.DEFAULT,
-        language: str = "vi-VN"
+        language: str = None
     ) -> GeocodeResponseDTO:
         """Handle getting street center position."""
+        if language is None:
+            from app.application.constants.validation_constants import DefaultValues
+            language = DefaultValues.DEFAULT_LANGUAGE
         return await self._geocoding.search_street_center(
             street_name, country_set, language
         )

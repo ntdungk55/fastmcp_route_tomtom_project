@@ -41,11 +41,12 @@ class UpdateDestinationUseCase:
             # If address is being updated, geocode it
             if request.address is not None and request.address != existing_destination.address:
                 logger.info(f"Geocoding new address: {request.address}")
+                from app.application.constants.validation_constants import DefaultValues
                 geocode_cmd = GeocodeAddressCommandDTO(
                     address=request.address,
-                    country_set="VN",
-                    limit=1,
-                    language="vi-VN"
+                    country_set=DefaultValues.DEFAULT_COUNTRY,
+                    limit=DefaultValues.DEFAULT_LIMIT,
+                    language=DefaultValues.DEFAULT_LANGUAGE
                 )
                 
                 geocode_result = await self._geocoding_provider.geocode_address(geocode_cmd)
@@ -82,11 +83,30 @@ class UpdateDestinationUseCase:
             
             logger.info(f"Successfully updated destination with ID: {saved_destination.id}")
             
-            return UpdateDestinationResponse(
-                success=True,
-                destination_id=saved_destination.id,
-                message=f"Destination '{saved_destination.name}' updated successfully"
-            )
+            # Verify that the destination was actually updated in database
+            logger.info(f"Verifying destination was updated in database...")
+            if saved_destination.id is None:
+                logger.error("❌ Database verification failed - destination ID is None")
+                return UpdateDestinationResponse(
+                    success=False,
+                    error="Database verification failed - destination ID is None"
+                )
+            
+            verification_destination = await self._destination_repository.find_by_id(saved_destination.id)
+            
+            if verification_destination:
+                logger.info("✅ Database verification successful - destination found in database")
+                return UpdateDestinationResponse(
+                    success=True,
+                    destination_id=saved_destination.id,
+                    message=f"Destination '{saved_destination.name}' updated successfully"
+                )
+            else:
+                logger.error("❌ Database verification failed - destination not found in database")
+                return UpdateDestinationResponse(
+                    success=False,
+                    error="Database verification failed - destination was not updated properly"
+                )
             
         except Exception as e:
             logger.error(f"Error updating destination: {str(e)}")

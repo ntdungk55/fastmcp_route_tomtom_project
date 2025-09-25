@@ -349,6 +349,13 @@ async def save_destination_tool(
         
         result = await _container.save_destination.execute(request)
         
+        # Log verification status
+        if result.success:
+            print(f"\n✅ Save Destination Success: {result.message}")
+            print(f"📊 Destination ID: {result.destination_id}")
+        else:
+            print(f"\n❌ Save Destination Failed: {result.error}")
+        
         # Trả về response dưới dạng dict
         return asdict(result)
     except Exception as e:
@@ -379,100 +386,37 @@ async def delete_destination_tool(
         if not name and not address:
             return {
                 "success": False,
-                "message": MCPSuccessMessages.DESTINATION_SEARCH_CRITERIA_MISSING,
-                "error": MCPDestinationErrorMessages.MISSING_SEARCH_CRITERIA
+                "message": "Please provide either name or address to delete destination",
+                "error": "Missing search criteria"
             }
         
         # Sử dụng SearchDestinationsUseCase để tìm kiếm
         search_request = SearchDestinationsRequest(name=name, address=address)
         search_result = await _container.search_destinations.execute(search_request)
         
-        if not search_result.success:
+        if not search_result.success or not search_result.destinations:
             return {
                 "success": False,
-                "message": search_result.message,
-                "error": search_result.error
+                "message": "No destinations found matching the criteria",
+                "error": "Destination not found"
             }
         
-        matching_destinations = search_result.destinations
+        # Lấy destination đầu tiên để xóa
+        target_destination = search_result.destinations[0]
         
-        if not matching_destinations:
-            return {
-                "success": False,
-                "message": MCPSuccessMessages.DESTINATION_NOT_FOUND,
-                "search_criteria": {
-                    "name": name,
-                    "address": address
-                },
-                "error": MCPDestinationErrorMessages.NO_MATCHING_DESTINATIONS
-            }
+        # Sử dụng Delete Destination Use Case
+        delete_request = DeleteDestinationRequest(destination_id=target_destination.id)
+        result = await _container.delete_destination.execute(delete_request)
         
-        # Xóa tất cả destinations tìm thấy
-        deleted_destinations = []
-        failed_deletions = []
-        
-        for target_destination in matching_destinations:
-            delete_request = DeleteDestinationRequest(destination_id=target_destination.id)
-            result = await _container.delete_destination.execute(delete_request)
-            
-            if result.success and result.deleted:
-                deleted_destinations.append({
-                    "destination_id": target_destination.id,
-                    "name": target_destination.name,
-                    "address": target_destination.address
-                })
-            else:
-                failed_deletions.append({
-                    "destination_id": target_destination.id,
-                    "name": target_destination.name,
-                    "address": target_destination.address,
-                    "error": result.error or MCPDestinationErrorMessages.UNKNOWN_ERROR
-                })
-        
-        # Xác minh việc xóa bằng cách search lại theo ID của từng destination đã xóa
-        remaining_destinations = []
-        
-        for deleted_dest in deleted_destinations:
-            verify_search_request = SearchDestinationsRequest(id=deleted_dest["destination_id"])
-            verify_search_result = await _container.search_destinations.execute(verify_search_request)
-            
-            if verify_search_result.success and verify_search_result.destinations:
-                # Destination vẫn còn tồn tại
-                remaining_destinations.append(deleted_dest)
-        
-        # Tạo response dựa trên kết quả
-        if deleted_destinations and not failed_deletions and not remaining_destinations:
-            # Tất cả đều xóa thành công
-            return {
-                "success": True,
-                "deleted_count": len(deleted_destinations),
-                "deleted_destinations": deleted_destinations,
-                "message": MCPSuccessMessages.DESTINATION_BULK_DELETE_SUCCESS.format(count=len(deleted_destinations)),
-                "verification": MCPSuccessMessages.DESTINATION_DELETE_VERIFIED
-            }
-        elif deleted_destinations and (failed_deletions or remaining_destinations):
-            # Một số thành công, một số thất bại
-            return {
-                "success": False,
-                "deleted_count": len(deleted_destinations),
-                "failed_count": len(failed_deletions) + len(remaining_destinations),
-                "deleted_destinations": deleted_destinations,
-                "failed_deletions": failed_deletions + remaining_destinations,
-                "message": MCPSuccessMessages.DESTINATION_PARTIAL_DELETE_SUCCESS.format(
-                    deleted_count=len(deleted_destinations),
-                    failed_count=len(failed_deletions) + len(remaining_destinations)
-                ),
-                "error": MCPDestinationErrorMessages.PARTIAL_DELETION_SUCCESS
-            }
+        # Log verification status
+        if result.success:
+            print(f"\n✅ Delete Destination Success: {result.message}")
+            print(f"📊 Deleted: {target_destination.name} at {target_destination.address}")
         else:
-            # Tất cả đều thất bại
-            return {
-                "success": False,
-                "failed_count": len(failed_deletions),
-                "failed_deletions": failed_deletions,
-                "message": MCPSuccessMessages.DESTINATION_DELETE_FAILED,
-                "error": MCPDestinationErrorMessages.ALL_DELETIONS_FAILED
-            }
+            print(f"\n❌ Delete Destination Failed: {result.error}")
+        
+        # Trả về response dưới dạng dict
+        return asdict(result)
     except Exception as e:
         return {"error": MCPToolErrorMessages.DELETE_DESTINATION_FAILED.format(error=str(e))}
 
@@ -493,42 +437,15 @@ async def update_destination_tool(
         
         result = await _container.update_destination.execute(request)
         
-        # Kiểm tra kết quả và trả về thông tin chi tiết
+        # Log verification status
         if result.success:
-            # Sử dụng SearchDestinationsUseCase để tìm destination đã cập nhật theo ID
-            search_request = SearchDestinationsRequest(id=destination_id, name=name, address=address)
-            search_result = await _container.search_destinations.execute(search_request)
-            
-            if search_result.success and search_result.destinations:
-                # Lấy destination đầu tiên (sẽ chỉ có 1 vì tìm theo ID)
-                updated_destination = search_result.destinations[0]
-                return {
-                    "success": True,
-                    "destination_id": destination_id,
-                    "message": MCPSuccessMessages.DESTINATION_UPDATED_SUCCESS,
-                    "updated_destination": {
-                        "destination_id": updated_destination.id,
-                        "name": updated_destination.name,
-                        "address": updated_destination.address,
-                        "latitude": updated_destination.latitude,
-                        "longitude": updated_destination.longitude,
-                        "updated_at": updated_destination.updated_at
-                    }
-                }
-            else:
-                return {
-                    "success": True,
-                    "destination_id": destination_id,
-                    "message": MCPSuccessMessages.DESTINATION_UPDATED_SUCCESS,
-                    "note": MCPSuccessMessages.DESTINATION_UPDATE_DETAILS_NOT_FOUND
-                }
+            print(f"\n✅ Update Destination Success: {result.message}")
+            print(f"📊 Destination ID: {result.destination_id}")
         else:
-            return {
-                "success": False,
-                "destination_id": destination_id,
-                "message": result.message or MCPSuccessMessages.DESTINATION_UPDATE_FAILED,
-                "error": result.error
-            }
+            print(f"\n❌ Update Destination Failed: {result.error}")
+        
+        # Trả về response dưới dạng dict
+        return asdict(result)
     except Exception as e:
         return {"error": MCPToolErrorMessages.UPDATE_DESTINATION_FAILED.format(error=str(e))}
 

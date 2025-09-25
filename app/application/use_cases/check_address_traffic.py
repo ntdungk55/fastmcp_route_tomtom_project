@@ -17,16 +17,17 @@ class CheckAddressTraffic:
     async def handle(self, cmd: AddressTrafficCommandDTO) -> AddressTrafficResultDTO:
         """Handle address-to-address traffic check."""
         # Step 1: Geocode both addresses
+        from app.application.constants.validation_constants import DefaultValues
         origin_cmd = GeocodeAddressCommandDTO(
             address=cmd.origin_address,
             country_set=cmd.country_set,
-            limit=1,
+            limit=DefaultValues.DEFAULT_LIMIT,
             language=cmd.language
         )
         dest_cmd = GeocodeAddressCommandDTO(
             address=cmd.destination_address,
             country_set=cmd.country_set,
-            limit=1,
+            limit=DefaultValues.DEFAULT_LIMIT,
             language=cmd.language
         )
         

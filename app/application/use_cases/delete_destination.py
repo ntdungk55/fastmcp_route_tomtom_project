@@ -32,11 +32,25 @@ class DeleteDestinationUseCase:
             
             if deleted:
                 logger.info(f"Successfully deleted destination with ID: {request.destination_id}")
-                return DeleteDestinationResponse(
-                    success=True,
-                    deleted=True,
-                    message=f"Destination '{existing_destination.name}' deleted successfully"
-                )
+                
+                # Verify that the destination was actually deleted from database
+                logger.info(f"Verifying destination was deleted from database...")
+                verification_destination = await self._destination_repository.find_by_id(request.destination_id)
+                
+                if verification_destination is None:
+                    logger.info("✅ Database verification successful - destination not found in database")
+                    return DeleteDestinationResponse(
+                        success=True,
+                        deleted=True,
+                        message=f"Destination '{existing_destination.name}' deleted successfully"
+                    )
+                else:
+                    logger.error("❌ Database verification failed - destination still exists in database")
+                    return DeleteDestinationResponse(
+                        success=False,
+                        deleted=False,
+                        error="Database verification failed - destination was not deleted properly"
+                    )
             else:
                 return DeleteDestinationResponse(
                     success=False,
