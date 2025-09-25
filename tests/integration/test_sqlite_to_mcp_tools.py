@@ -5,7 +5,7 @@ import asyncio
 from unittest.mock import patch
 from app.di.container import Container
 from app.application.dto.save_destination_dto import SaveDestinationRequest
-from app.application.dto.list_destinations_dto import ListDestinationsRequest
+from app.application.dto.search_destinations_dto import SearchDestinationsRequest
 from app.application.dto.update_destination_dto import UpdateDestinationRequest
 from app.application.dto.delete_destination_dto import DeleteDestinationRequest
 
@@ -43,7 +43,7 @@ class TestSQLiteToMCPIntegration:
         assert result.error is None
         
         # Verify data is persisted in SQLite
-        list_result = await container.list_destinations.execute(ListDestinationsRequest())
+        list_result = await container.search_destinations.execute(SearchDestinationsRequest())
         assert list_result.success is True
         assert list_result.total_count >= 1
         
@@ -76,7 +76,7 @@ class TestSQLiteToMCPIntegration:
         ))
         
         # Act
-        result = await container.list_destinations.execute(ListDestinationsRequest())
+        result = await container.search_destinations.execute(SearchDestinationsRequest())
         
         # Assert
         assert result.success is True
@@ -129,7 +129,7 @@ class TestSQLiteToMCPIntegration:
         assert update_result.error is None
         
         # Verify update is persisted in SQLite
-        list_result = await container.list_destinations.execute(ListDestinationsRequest())
+        list_result = await container.search_destinations.execute(SearchDestinationsRequest())
         assert list_result.success is True
         
         # Find updated destination
@@ -160,7 +160,7 @@ class TestSQLiteToMCPIntegration:
         destination_id = save_result.destination_id
         
         # Verify destination exists
-        list_result_before = await container.list_destinations.execute(ListDestinationsRequest())
+        list_result_before = await container.search_destinations.execute(SearchDestinationsRequest())
         initial_count = list_result_before.total_count
         
         # Act
@@ -175,7 +175,7 @@ class TestSQLiteToMCPIntegration:
         assert delete_result.error is None
         
         # Verify deletion is persisted in SQLite
-        list_result_after = await container.list_destinations.execute(ListDestinationsRequest())
+        list_result_after = await container.search_destinations.execute(SearchDestinationsRequest())
         assert list_result_after.success is True
         assert list_result_after.total_count == initial_count - 1
         
@@ -213,7 +213,7 @@ class TestSQLiteToMCPIntegration:
             saved_ids.append(result.destination_id)
         
         # 2. List all destinations
-        list_result = await container.list_destinations.execute(ListDestinationsRequest())
+        list_result = await container.search_destinations.execute(SearchDestinationsRequest())
         assert list_result.success is True
         assert list_result.total_count >= 3
         
@@ -227,7 +227,7 @@ class TestSQLiteToMCPIntegration:
         assert update_result.success is True
         
         # 4. Verify update
-        list_result_after_update = await container.list_destinations.execute(ListDestinationsRequest())
+        list_result_after_update = await container.search_destinations.execute(SearchDestinationsRequest())
         updated_dest = None
         for dest in list_result_after_update.destinations:
             if dest.id == saved_ids[0]:
@@ -244,7 +244,7 @@ class TestSQLiteToMCPIntegration:
         assert delete_result.success is True
         
         # 6. Verify final state
-        final_list_result = await container.list_destinations.execute(ListDestinationsRequest())
+        final_list_result = await container.search_destinations.execute(SearchDestinationsRequest())
         assert final_list_result.success is True
         
         # Count remaining destinations
@@ -268,7 +268,7 @@ class TestSQLiteToMCPIntegration:
         
         # Test that we can read from the file
         container = await container_with_db()
-        list_result = await container.list_destinations.execute(ListDestinationsRequest())
+        list_result = await container.search_destinations.execute(SearchDestinationsRequest())
         assert list_result.success is True
     
     @pytest.mark.asyncio
@@ -291,7 +291,7 @@ class TestSQLiteToMCPIntegration:
         container2 = Container()
         await container2.initialize_database()
         
-        list_result = await container2.list_destinations.execute(ListDestinationsRequest())
+        list_result = await container2.search_destinations.execute(SearchDestinationsRequest())
         assert list_result.success is True
         
         # Find our test destination

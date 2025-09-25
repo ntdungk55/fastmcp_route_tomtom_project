@@ -85,3 +85,23 @@ class MemoryDestinationRepository(DestinationRepository):
         except Exception as e:
             logger.error(f"Error deleting destination: {str(e)}")
             raise
+    
+    async def search_by_name_and_address(self, id: Optional[str] = None, name: Optional[str] = None, address: Optional[str] = None) -> List[Destination]:
+        """Search destinations by ID, name and/or address (partial matching, case-insensitive)"""
+        try:
+            matching_destinations = []
+            
+            for destination in self._destinations.values():
+                id_match = not id or (destination.id == id)
+                name_match = not name or (name.lower() in destination.name.lower())
+                address_match = not address or (address.lower() in destination.address.lower())
+                
+                if id_match and name_match and address_match:
+                    matching_destinations.append(destination)
+            
+            logger.info(f"Found {len(matching_destinations)} destinations matching id='{id}', name='{name}', address='{address}'")
+            return matching_destinations
+            
+        except Exception as e:
+            logger.error(f"Error searching destinations: {str(e)}")
+            raise

@@ -165,6 +165,39 @@ class SQLiteDestinationRepository(DestinationRepository):
             logger.error(f"Error deleting destination: {str(e)}")
             raise
     
+    async def search_by_name_and_address(self, id: Optional[str] = None, name: Optional[str] = None, address: Optional[str] = None) -> List[Destination]:
+        """Search destinations by ID, name and/or address (partial matching, case-insensitive)."""
+        try:
+            async with self._db_connection as conn:
+                cursor = await conn.cursor()
+                
+                # Build dynamic query based on provided criteria
+                query = "SELECT id, name, address, latitude, longitude, created_at, updated_at FROM destinations WHERE 1=1"
+                params = []
+                
+                if id:
+                    query += " AND id = ?"
+                    params.append(id)
+                
+                if name:
+                    query += " AND LOWER(name) LIKE LOWER(?)"
+                    params.append(f"%{name}%")
+                
+                if address:
+                    query += " AND LOWER(address) LIKE LOWER(?)"
+                    params.append(f"%{address}%")
+                
+                await cursor.execute(query, params)
+                rows = await cursor.fetchall()
+                
+                destinations = [self._row_to_destination(row) for row in rows]
+                logger.info(f"Found {len(destinations)} destinations matching id='{id}', name='{name}', address='{address}'")
+                return destinations
+                
+        except Exception as e:
+            logger.error(f"Error searching destinations: {str(e)}")
+            raise
+    
     def _row_to_destination(self, row: tuple) -> Destination:
         """Convert database row to Destination entity."""
         return Destination(

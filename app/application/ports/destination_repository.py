@@ -30,3 +30,8 @@ class DestinationRepository(ABC):
     async def delete(self, destination_id: str) -> bool:
         """Delete a destination by ID, return True if deleted"""
         pass
+    
+    @abstractmethod
+    async def search_by_name_and_address(self, id: Optional[str] = None, name: Optional[str] = None, address: Optional[str] = None) -> List[Destination]:
+        """Search destinations by ID, name and/or address (partial matching, case-insensitive)"""
+        pass

@@ -14,8 +14,8 @@ from app.application.use_cases.get_detailed_route import GetDetailedRouteUseCase
 from app.application.use_cases.get_intersection_position import GetIntersectionPosition
 from app.application.use_cases.get_street_center import GetStreetCenter
 from app.application.use_cases.get_traffic_condition import GetTrafficCondition
-from app.application.use_cases.list_destinations import ListDestinationsUseCase
 from app.application.use_cases.save_destination import SaveDestinationUseCase
+from app.application.use_cases.search_destinations import SearchDestinationsUseCase
 from app.application.use_cases.update_destination import UpdateDestinationUseCase
 
 # Infrastructure
@@ -129,7 +129,7 @@ class Container:
             destination_repository=self.destination_repository,
             geocoding_provider=self.geocoding_adapter
         )
-        self.list_destinations = ListDestinationsUseCase(self.destination_repository)
+        self.search_destinations = SearchDestinationsUseCase(self.destination_repository)
         self.delete_destination = DeleteDestinationUseCase(self.destination_repository)
         self.update_destination = UpdateDestinationUseCase(
             destination_repository=self.destination_repository,

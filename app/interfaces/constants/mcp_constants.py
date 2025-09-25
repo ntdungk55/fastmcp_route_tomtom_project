@@ -63,19 +63,19 @@ class MCPToolNames:
 class MCPToolDescriptions:
     """MCP Tool descriptions - Instructions for LLM to understand tool functionality."""
     CALCULATE_ROUTE = "Calculate a route (TomTom Routing API) and return a JSON summary."
-    GEOCODE_ADDRESS = "Chuyển đổi địa chỉ thành tọa độ."
-    GET_INTERSECTION_POSITION = "Tìm tọa độ giao lộ."
-    GET_STREET_CENTER_POSITION = "Tìm tọa độ trung tâm đường phố."
-    GET_TRAFFIC_CONDITION = "Lấy thông tin tình trạng giao thông."
+    GEOCODE_ADDRESS = "Chuyển đổi địa chỉ thành tọa độ cụ thể."
+    GET_INTERSECTION_POSITION = "Tìm tọa độ giao lộ cụ thể."
+    GET_STREET_CENTER_POSITION = "Tìm tọa độ trung tâm đường phố cụ thể."
+    GET_TRAFFIC_CONDITION = "Lấy thông tin tình trạng giao thông tại một vị trí cụ thể."
     GET_ROUTE_WITH_TRAFFIC = "Tính toán tuyến đường có kèm thông tin giao thông."
-    GET_VIA_ROUTE = "Tính toán tuyến đường qua điểm trung gian A → B → C."
-    ANALYZE_ROUTE_TRAFFIC = "Phân tích tình trạng giao thông trên tuyến đường."
-    CHECK_TRAFFIC_BETWEEN_ADDRESSES = "Kiểm tra tình trạng giao thông giữa hai địa chỉ."
+    GET_VIA_ROUTE = "Tính toán tuyến đường qua điểm trung gian A → B → C ."
+    ANALYZE_ROUTE_TRAFFIC = "Phân tích tình trạng giao thông trên tuyến đường bằng tọa độ của 2 điểm đầu và cuối nếu 2 điểm đó đã có tọa độ được lưu trong hệ thống.Nếu chỉ có 1 thì hãy tìm kiếm tọa độ rồi gọi tool này."
+    CHECK_TRAFFIC_BETWEEN_ADDRESSES = "Kiểm tra tình trạng giao thông giữa hai địa chỉ chưa có tọa độ được lưu trong hệ thống."
     GET_DETAILED_ROUTE = "Tính toán tuyến đường chi tiết và cung cấp chỉ dẫn từng bước di chuyển giữa hai địa chỉ, bao gồm hướng dẫn lái xe, khoảng cách, thời gian và thông tin giao thông."
-    SAVE_DESTINATION = "Lưu điểm đến để sử dụng sau này (tự động tìm tọa độ bằng TomTom API)."
+    SAVE_DESTINATION = "Lưu điểm đến để sử dụng sau này (tự động tìm tọa độ bằng TomTom API sau đó lưu)."
     LIST_DESTINATIONS = "Liệt kê tất cả điểm đến đã lưu."
-    DELETE_DESTINATION = "Xóa điểm đến theo ID."
-    UPDATE_DESTINATION = "Cập nhật điểm đến (tên hoặc địa chỉ)."
+    DELETE_DESTINATION = "Xóa tất cả điểm đến khớp với tên hoặc địa chỉ và xác minh việc xóa đã thành công."
+    UPDATE_DESTINATION = "Cập nhật điểm đến (tên hoặc địa chỉ) và trả về thông tin chi tiết về địa chỉ đã được cập nhật."
 
 
 class MCPErrorMessages:
@@ -131,6 +131,40 @@ class MCPSuccessMessages:
     SERVER_STOPPED = "👋 Server stopped by user"
     API_KEY_CONFIGURED = "✅ TomTom API key configured"
     TOOL_EXECUTED = "✅ Tool executed successfully: {tool_name}"
+    
+    # Destination management success messages
+    DESTINATION_UPDATED_SUCCESS = "Điểm đến đã được cập nhật thành công"
+    DESTINATION_SAVED_SUCCESS = "Điểm đến đã được lưu thành công"
+    DESTINATION_DELETED_SUCCESS = "Điểm đến đã được xóa thành công"
+    DESTINATION_LISTED_SUCCESS = "Danh sách điểm đến đã được lấy thành công"
+    
+    # Destination management warning/error messages
+    DESTINATION_UPDATE_DETAILS_NOT_FOUND = "Không thể lấy thông tin chi tiết về điểm đến đã cập nhật"
+    DESTINATION_UPDATE_FAILED = "Cập nhật điểm đến thất bại"
+    DESTINATION_DELETE_VERIFICATION_FAILED = "Không thể xác minh việc xóa điểm đến"
+    DESTINATION_DELETE_FAILED = "Xóa điểm đến thất bại"
+    DESTINATION_DELETE_VERIFIED = "Đã xác minh: Điểm đến đã được xóa khỏi lưu trữ"
+    DESTINATION_STILL_EXISTS = "Điểm đến vẫn còn tồn tại trong lưu trữ sau khi thực hiện xóa"
+    DESTINATION_SEARCH_CRITERIA_MISSING = "Vui lòng cung cấp tên hoặc địa chỉ để tìm kiếm điểm đến cần xóa"
+    DESTINATION_NOT_FOUND = "Không tìm thấy điểm đến khớp với tiêu chí tìm kiếm"
+    DESTINATION_MULTIPLE_FOUND = "Tìm thấy {count} điểm đến khớp. Vui lòng cung cấp thông tin cụ thể hơn"
+    DESTINATION_BULK_DELETE_SUCCESS = "Đã xóa thành công {count} điểm đến"
+    DESTINATION_PARTIAL_DELETE_SUCCESS = "Đã xóa {deleted_count} điểm đến, {failed_count} điểm đến thất bại"
+    
+    # Route calculation success messages
+    ROUTE_CALCULATED_SUCCESS = "Tuyến đường đã được tính toán thành công"
+    ROUTE_WITH_TRAFFIC_SUCCESS = "Tuyến đường có thông tin giao thông đã được tính toán thành công"
+    DETAILED_ROUTE_SUCCESS = "Tuyến đường chi tiết đã được tính toán thành công"
+    
+    # Geocoding success messages
+    ADDRESS_GEOCODED_SUCCESS = "Địa chỉ đã được chuyển đổi thành tọa độ thành công"
+    INTERSECTION_FOUND_SUCCESS = "Giao lộ đã được tìm thấy thành công"
+    STREET_CENTER_FOUND_SUCCESS = "Trung tâm đường phố đã được tìm thấy thành công"
+    
+    # Traffic analysis success messages
+    TRAFFIC_CONDITION_SUCCESS = "Thông tin tình trạng giao thông đã được lấy thành công"
+    TRAFFIC_ANALYSIS_SUCCESS = "Phân tích tình trạng giao thông đã được thực hiện thành công"
+    ADDRESS_TRAFFIC_CHECK_SUCCESS = "Tình trạng giao thông giữa các địa chỉ đã được kiểm tra thành công"
 
 
 class MCPLogMessages:
@@ -201,3 +235,13 @@ class MCPDetailedRouteLogMessages:
     
     # Error logging
     ERROR_HEADER = "\n❌ Error in get_detailed_route: {error}"
+
+
+class MCPDestinationErrorMessages:
+    """MCP Error messages for destination management."""
+    # Destination management error messages
+    MISSING_SEARCH_CRITERIA = "Missing search criteria"
+    NO_MATCHING_DESTINATIONS = "No matching destinations found"
+    UNKNOWN_ERROR = "Unknown error"
+    PARTIAL_DELETION_SUCCESS = "Partial deletion success"
+    ALL_DELETIONS_FAILED = "All deletions failed"
