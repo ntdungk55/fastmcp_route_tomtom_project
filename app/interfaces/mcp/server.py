@@ -73,7 +73,7 @@ async def calculate_route_tool(
     dest_lon: float,
     travel_mode: TravelModeLiteral = TravelModeConstants.CAR,
 ) -> dict:
-    """Calculate a route (TomTom Routing API) and return a JSON summary."""
+    f"""{MCPToolDescriptions.CALCULATE_ROUTE}"""
     try:
         validation_service = _container.validation_service
         origin_lat_float = validation_service.safe_float_convert(origin_lat)
@@ -110,7 +110,7 @@ async def geocode_address_tool(
     limit: int = LimitConstants.DEFAULT_GEOCODING_LIMIT,
     language: str = LanguageConstants.DEFAULT
 ) -> dict:
-    """Chuyển đổi địa chỉ thành tọa độ (sử dụng Clean Architecture)."""
+    f"""{MCPToolDescriptions.GEOCODE_ADDRESS}"""
     try:
         # Sử dụng Use Case thay vì gọi trực tiếp API
         cmd = GeocodeAddressCommandDTO(
@@ -144,7 +144,7 @@ async def get_route_with_traffic_tool(
     max_alternatives: int = DefaultValues.DEFAULT_MAX_ALTERNATIVES,
     language: str = LanguageConstants.DEFAULT
 ) -> dict:
-    """Tính toán tuyến đường có kèm thông tin giao thông (sử dụng Clean Architecture)."""
+    f"""{MCPToolDescriptions.GET_ROUTE_WITH_TRAFFIC}"""
     try:
         # Sử dụng Route with Traffic Use Case
         validation_service = _container.validation_service
@@ -175,7 +175,7 @@ async def get_intersection_position_tool(
     limit: int = 1,
     language: str = LanguageConstants.DEFAULT
 ) -> dict:
-    """Tìm tọa độ giao lộ (sử dụng Clean Architecture)."""
+    f"""{MCPToolDescriptions.GET_INTERSECTION_POSITION}"""
     try:
         # Sử dụng Structured Geocoding Use Case
         cmd = StructuredGeocodeCommandDTO(
@@ -206,7 +206,7 @@ async def get_street_center_position_tool(
     country_set: str = CountryConstants.DEFAULT,
     language: str = LanguageConstants.DEFAULT
 ) -> dict:
-    """Tìm tọa độ trung tâm đường phố (sử dụng Clean Architecture)."""
+    f"""{MCPToolDescriptions.GET_STREET_CENTER_POSITION}"""
     try:
         # Sử dụng Street Center Use Case
         result = await _container.get_street_center.handle(
@@ -231,7 +231,7 @@ async def get_traffic_condition_tool(
     longitude: Union[str, float],
     zoom: int = LimitConstants.DEFAULT_TRAFFIC_ZOOM
 ) -> dict:
-    """Lấy thông tin tình trạng giao thông (sử dụng Clean Architecture)."""
+    f"""{MCPToolDescriptions.GET_TRAFFIC_CONDITION}"""
     try:
         # Chuyển đổi tọa độ và sử dụng Traffic Use Case
         validation_service = _container.validation_service
@@ -260,7 +260,7 @@ async def get_via_route_tool(
     travel_mode: str = DefaultValues.DEFAULT_TRAVEL_MODE,
     language: str = LanguageConstants.DEFAULT
 ) -> dict:
-    """Tính toán tuyến đường qua điểm trung gian A → B → C (sử dụng Clean Architecture)."""
+    f"""{MCPToolDescriptions.GET_VIA_ROUTE}"""
     try:
         # Sử dụng Via Route Use Case
         validation_service = _container.validation_service
@@ -289,7 +289,7 @@ async def analyze_route_traffic_tool(
     dest_lon: Union[str, float],
     language: str = LanguageConstants.DEFAULT
 ) -> dict:
-    """Phân tích tình trạng giao thông trên tuyến đường (sử dụng Clean Architecture)."""
+    f"""{MCPToolDescriptions.ANALYZE_ROUTE_TRAFFIC}"""
     try:
         # Sử dụng Traffic Analysis Use Case
         validation_service = _container.validation_service
@@ -316,7 +316,7 @@ async def check_traffic_between_addresses_tool(
     travel_mode: str = TravelModeConstants.CAR,
     language: str = LanguageConstants.DEFAULT
 ) -> dict:
-    """Kiểm tra tình trạng giao thông giữa hai địa chỉ (sử dụng Clean Architecture)."""
+    f"""{MCPToolDescriptions.CHECK_TRAFFIC_BETWEEN_ADDRESSES}"""
     try:
         # Sử dụng Address Traffic Use Case - composite use case
         cmd = AddressTrafficCommandDTO(
@@ -339,7 +339,7 @@ async def save_destination_tool(
     name: str,
     address: str
 ) -> dict:
-    """Lưu điểm đến để sử dụng sau này (tự động tìm tọa độ bằng TomTom API)."""
+    f"""{MCPToolDescriptions.SAVE_DESTINATION}"""
     try:
         # Sử dụng Save Destination Use Case
         request = SaveDestinationRequest(
@@ -356,7 +356,7 @@ async def save_destination_tool(
 
 @mcp.tool(name=MCPToolNames.LIST_DESTINATIONS)
 async def list_destinations_tool() -> dict:
-    """Liệt kê tất cả điểm đến đã lưu."""
+    f"""{MCPToolDescriptions.LIST_DESTINATIONS}"""
     try:
         # Sử dụng List Destinations Use Case
         request = ListDestinationsRequest()
@@ -372,7 +372,7 @@ async def list_destinations_tool() -> dict:
 async def delete_destination_tool(
     destination_id: str
 ) -> dict:
-    """Xóa điểm đến theo ID."""
+    f"""{MCPToolDescriptions.DELETE_DESTINATION}"""
     try:
         # Sử dụng Delete Destination Use Case
         request = DeleteDestinationRequest(destination_id=destination_id)
@@ -390,7 +390,7 @@ async def update_destination_tool(
     name: str | None = None,
     address: str | None = None
 ) -> dict:
-    """Cập nhật điểm đến (tên hoặc địa chỉ)."""
+    f"""{MCPToolDescriptions.UPDATE_DESTINATION}"""
     try:
         # Sử dụng Update Destination Use Case
         request = UpdateDestinationRequest(
@@ -414,7 +414,7 @@ async def get_detailed_route_tool(
     country_set: str = CountryConstants.DEFAULT,
     language: str = LanguageConstants.DEFAULT
 ) -> dict:
-    """Tính toán tuyến đường chi tiết và cung cấp chỉ dẫn từng bước di chuyển giữa hai địa chỉ, bao gồm hướng dẫn lái xe, khoảng cách, thời gian và thông tin giao thông."""
+    f"""{MCPToolDescriptions.GET_DETAILED_ROUTE}"""
     try:
         # Sử dụng Get Detailed Route Use Case
         request = DetailedRouteRequest(

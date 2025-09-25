@@ -61,21 +61,21 @@ class MCPToolNames:
 
 
 class MCPToolDescriptions:
-    """MCP Tool descriptions."""
-    CALCULATE_ROUTE = "Tính toán tuyến đường cơ bản từ điểm A đến điểm B"
-    GEOCODE_ADDRESS = "Chuyển đổi địa chỉ thành tọa độ GPS"
-    GET_INTERSECTION_POSITION = "Tìm tọa độ giao lộ giữa các đường phố"
-    GET_STREET_CENTER_POSITION = "Tìm tọa độ trung tâm của một đường phố"
-    GET_TRAFFIC_CONDITION = "Lấy thông tin tình trạng giao thông tại một vị trí"
-    GET_ROUTE_WITH_TRAFFIC = "Tính toán tuyến đường có kèm thông tin giao thông"
-    GET_VIA_ROUTE = "Tính toán tuyến đường qua điểm trung gian A → B → C"
-    ANALYZE_ROUTE_TRAFFIC = "Phân tích tình trạng giao thông trên tuyến đường"
-    CHECK_TRAFFIC_BETWEEN_ADDRESSES = "Kiểm tra tình trạng giao thông giữa các địa chỉ"
-    GET_DETAILED_ROUTE = "Tính toán tuyến đường chi tiết và cung cấp chỉ dẫn từng bước di chuyển giữa hai địa chỉ, bao gồm hướng dẫn lái xe, khoảng cách, thời gian và thông tin giao thông"
-    SAVE_DESTINATION = "Lưu điểm đến với geocoding tự động"
-    LIST_DESTINATIONS = "Liệt kê tất cả điểm đến đã lưu"
-    DELETE_DESTINATION = "Xóa điểm đến theo ID"
-    UPDATE_DESTINATION = "Cập nhật thông tin điểm đến"
+    """MCP Tool descriptions - Instructions for LLM to understand tool functionality."""
+    CALCULATE_ROUTE = "Calculate a route (TomTom Routing API) and return a JSON summary."
+    GEOCODE_ADDRESS = "Chuyển đổi địa chỉ thành tọa độ."
+    GET_INTERSECTION_POSITION = "Tìm tọa độ giao lộ."
+    GET_STREET_CENTER_POSITION = "Tìm tọa độ trung tâm đường phố."
+    GET_TRAFFIC_CONDITION = "Lấy thông tin tình trạng giao thông."
+    GET_ROUTE_WITH_TRAFFIC = "Tính toán tuyến đường có kèm thông tin giao thông."
+    GET_VIA_ROUTE = "Tính toán tuyến đường qua điểm trung gian A → B → C."
+    ANALYZE_ROUTE_TRAFFIC = "Phân tích tình trạng giao thông trên tuyến đường."
+    CHECK_TRAFFIC_BETWEEN_ADDRESSES = "Kiểm tra tình trạng giao thông giữa hai địa chỉ."
+    GET_DETAILED_ROUTE = "Tính toán tuyến đường chi tiết và cung cấp chỉ dẫn từng bước di chuyển giữa hai địa chỉ, bao gồm hướng dẫn lái xe, khoảng cách, thời gian và thông tin giao thông."
+    SAVE_DESTINATION = "Lưu điểm đến để sử dụng sau này (tự động tìm tọa độ bằng TomTom API)."
+    LIST_DESTINATIONS = "Liệt kê tất cả điểm đến đã lưu."
+    DELETE_DESTINATION = "Xóa điểm đến theo ID."
+    UPDATE_DESTINATION = "Cập nhật điểm đến (tên hoặc địa chỉ)."
 
 
 class MCPErrorMessages:
