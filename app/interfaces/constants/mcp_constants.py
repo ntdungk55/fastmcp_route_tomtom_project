@@ -62,20 +62,206 @@ class MCPToolNames:
 
 class MCPToolDescriptions:
     """MCP Tool descriptions - Instructions for LLM to understand tool functionality."""
-    CALCULATE_ROUTE = "Calculate a route (TomTom Routing API) and return a JSON summary."
-    GEOCODE_ADDRESS = "Chuyển đổi địa chỉ thành tọa độ cụ thể."
-    GET_INTERSECTION_POSITION = "Tìm tọa độ giao lộ cụ thể."
-    GET_STREET_CENTER_POSITION = "Tìm tọa độ trung tâm đường phố cụ thể."
-    GET_TRAFFIC_CONDITION = "Lấy thông tin tình trạng giao thông tại một vị trí cụ thể."
-    GET_ROUTE_WITH_TRAFFIC = "Tính toán tuyến đường có kèm thông tin giao thông."
-    GET_VIA_ROUTE = "Tính toán tuyến đường qua điểm trung gian A → B → C ."
-    ANALYZE_ROUTE_TRAFFIC = "Phân tích tình trạng giao thông trên tuyến đường bằng tọa độ của 2 điểm đầu và cuối nếu 2 điểm đó đã có tọa độ được lưu trong hệ thống.Nếu chỉ có 1 thì hãy tìm kiếm tọa độ rồi gọi tool này."
-    CHECK_TRAFFIC_BETWEEN_ADDRESSES = "Kiểm tra tình trạng giao thông giữa hai địa chỉ chưa có tọa độ được lưu trong hệ thống."
-    GET_DETAILED_ROUTE = "Tính toán tuyến đường chi tiết và cung cấp chỉ dẫn từng bước di chuyển giữa hai địa chỉ, bao gồm hướng dẫn lái xe, khoảng cách, thời gian và thông tin giao thông."
-    SAVE_DESTINATION = "Lưu điểm đến để sử dụng sau này (tự động tìm tọa độ bằng TomTom API sau đó lưu)."
-    LIST_DESTINATIONS = "Liệt kê tất cả điểm đến đã lưu."
-    DELETE_DESTINATION = "Xóa tất cả điểm đến khớp với tên hoặc địa chỉ và xác minh việc xóa đã thành công."
-    UPDATE_DESTINATION = "Cập nhật điểm đến (tên hoặc địa chỉ) và trả về thông tin chi tiết về địa chỉ đã được cập nhật."
+    
+    # ROUTING TOOLS
+    CALCULATE_ROUTE = """
+    Calculate a route between two coordinates using TomTom Routing API.
+    
+    INPUT:
+    - origin_lat: float (latitude of starting point)
+    - origin_lon: float (longitude of starting point) 
+    - dest_lat: float (latitude of destination)
+    - dest_lon: float (longitude of destination)
+    - travel_mode: str (optional, default: "car") - "car", "bicycle", or "foot"
+    
+    OUTPUT:
+    - JSON with route summary (distance, duration) and route sections
+    - Returns error if coordinates are invalid or route cannot be calculated
+    """
+    
+    GET_DETAILED_ROUTE = """
+    Calculate detailed route with step-by-step driving instructions between two addresses.
+    
+    INPUT:
+    - origin_address: str (starting address)
+    - destination_address: str (destination address)
+    - travel_mode: str (optional, default: "car") - "car", "bicycle", or "foot"
+    - country_set: str (optional, default: "VN")
+    - language: str (optional, default: "vi-VN")
+    
+    OUTPUT:
+    - JSON with detailed route including driving instructions, distances, times, and traffic info
+    - Returns error if addresses cannot be found or route cannot be calculated
+    """
+    
+    # GEOCODING TOOLS
+    GEOCODE_ADDRESS = """
+    Convert address to coordinates using TomTom Geocoding API.
+    
+    INPUT:
+    - address: str (address to geocode)
+    - country_set: str (optional, default: "VN")
+    - limit: int (optional, default: 1) - max number of results
+    - language: str (optional, default: "vi-VN")
+    
+    OUTPUT:
+    - JSON with geocoding results including coordinates, formatted address, and confidence score
+    - Returns error if address cannot be found
+    """
+    
+    GET_INTERSECTION_POSITION = """
+    Find coordinates of a specific intersection.
+    
+    INPUT:
+    - street1: str (first street name)
+    - street2: str (second street name)
+    - country_set: str (optional, default: "VN")
+    - language: str (optional, default: "vi-VN")
+    
+    OUTPUT:
+    - JSON with intersection coordinates and formatted address
+    - Returns error if intersection cannot be found
+    """
+    
+    GET_STREET_CENTER_POSITION = """
+    Find center coordinates of a specific street.
+    
+    INPUT:
+    - street_name: str (name of the street)
+    - country_set: str (optional, default: "VN")
+    - language: str (optional, default: "vi-VN")
+    
+    OUTPUT:
+    - JSON with street center coordinates and formatted address
+    - Returns error if street cannot be found
+    """
+    
+    # TRAFFIC TOOLS
+    GET_TRAFFIC_CONDITION = """
+    Get traffic condition information at a specific location.
+    
+    INPUT:
+    - lat: float (latitude)
+    - lon: float (longitude)
+    - language: str (optional, default: "vi-VN")
+    
+    OUTPUT:
+    - JSON with traffic condition data including flow, incidents, and delays
+    - Returns error if location is invalid or traffic data unavailable
+    """
+    
+    GET_ROUTE_WITH_TRAFFIC = """
+    Calculate route with traffic information included.
+    
+    INPUT:
+    - origin_lat: float (starting latitude)
+    - origin_lon: float (starting longitude)
+    - dest_lat: float (destination latitude)
+    - dest_lon: float (destination longitude)
+    - travel_mode: str (optional, default: "car")
+    
+    OUTPUT:
+    - JSON with route summary and traffic-affected sections
+    - Returns error if route cannot be calculated
+    """
+    
+    GET_VIA_ROUTE = """
+    Calculate route through intermediate waypoints (A → B → C).
+    
+    INPUT:
+    - origin_lat: float (starting latitude)
+    - origin_lon: float (starting longitude)
+    - dest_lat: float (destination latitude)
+    - dest_lon: float (destination longitude)
+    - via_lat: float (intermediate waypoint latitude)
+    - via_lon: float (intermediate waypoint longitude)
+    - travel_mode: str (optional, default: "car")
+    
+    OUTPUT:
+    - JSON with route summary passing through the intermediate waypoint
+    - Returns error if coordinates are invalid or route cannot be calculated
+    """
+    
+    ANALYZE_ROUTE_TRAFFIC = """
+    Analyze traffic conditions on a route between two coordinates.
+    
+    INPUT:
+    - origin_lat: float (starting latitude)
+    - origin_lon: float (starting longitude)
+    - dest_lat: float (destination latitude)
+    - dest_lon: float (destination longitude)
+    - travel_mode: str (optional, default: "car")
+    
+    OUTPUT:
+    - JSON with traffic analysis including delays, incidents, and alternative routes
+    - Returns error if coordinates are invalid or analysis cannot be performed
+    """
+    
+    CHECK_TRAFFIC_BETWEEN_ADDRESSES = """
+    Check traffic conditions between two addresses (automatically geocodes addresses).
+    
+    INPUT:
+    - origin_address: str (starting address)
+    - destination_address: str (destination address)
+    - country_set: str (optional, default: "VN")
+    - travel_mode: str (optional, default: "car")
+    - language: str (optional, default: "vi-VN")
+    
+    OUTPUT:
+    - JSON with traffic analysis between the two addresses
+    - Returns error if addresses cannot be found or traffic data unavailable
+    """
+    
+    # DESTINATION MANAGEMENT TOOLS
+    SAVE_DESTINATION = """
+    Save a destination for future use (automatically geocodes and stores coordinates).
+    
+    INPUT:
+    - name: str (destination name)
+    - address: str (destination address)
+    
+    OUTPUT:
+    - JSON with success status, destination ID, and verification that data was saved to database
+    - Returns error if address cannot be geocoded or destination already exists
+    """
+    
+    LIST_DESTINATIONS = """
+    List all saved destinations.
+    
+    INPUT:
+    - None (no parameters required)
+    
+    OUTPUT:
+    - JSON with list of all saved destinations including ID, name, address, coordinates, and timestamps
+    - Returns empty list if no destinations are saved
+    """
+    
+    DELETE_DESTINATION = """
+    Delete a destination by name or address.
+    
+    INPUT:
+    - name: str (optional) - destination name to delete
+    - address: str (optional) - destination address to delete
+    - Note: At least one of name or address must be provided
+    
+    OUTPUT:
+    - JSON with success status and verification that destination was deleted from database
+    - Returns error if no matching destination found or deletion failed
+    """
+    
+    UPDATE_DESTINATION = """
+    Update a destination's name or address.
+    
+    INPUT:
+    - destination_id: str (ID of destination to update)
+    - name: str (optional) - new name for destination
+    - address: str (optional) - new address for destination
+    - Note: At least one of name or address must be provided
+    
+    OUTPUT:
+    - JSON with success status, destination ID, and verification that data was updated in database
+    - Returns error if destination not found or update failed
+    """
 
 
 class MCPErrorMessages:
