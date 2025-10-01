@@ -6,7 +6,11 @@ from pathlib import Path
 from typing import AsyncContextManager, Optional
 from app.infrastructure.logging.logger import get_logger
 
-logger = get_logger(__name__)
+logger = get_logger(
+    name=__name__,
+    layer="infrastructure",
+    component="database"
+)
 
 
 class DatabaseConnection:

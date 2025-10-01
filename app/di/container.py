@@ -47,7 +47,11 @@ class Container:
     
     def __init__(self, settings: Settings | None = None):
         """Khởi tạo container với settings."""
-        self.logger = get_logger("container")
+        self.logger = get_logger(
+            name="container",
+            layer="di",
+            component="container"
+        )
         self.settings = settings or Settings()
         self.settings.validate()
 

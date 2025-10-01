@@ -17,7 +17,11 @@ from app.domain.value_objects.latlon import LatLon
 from app.domain.enums.travel_mode import TravelMode
 from app.infrastructure.logging.logger import get_logger
 
-logger = get_logger(__name__)
+logger = get_logger(
+    name=__name__,
+    layer="application",
+    component="use_cases"
+)
 
 
 class GetDetailedRouteUseCase:
