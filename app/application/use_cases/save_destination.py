@@ -8,6 +8,8 @@ from app.application.ports.destination_repository import DestinationRepository
 from app.application.ports.geocoding_provider import GeocodingProvider
 from app.domain.entities.destination import Destination
 from app.domain.value_objects.latlon import LatLon
+from app.domain.value_objects.destination_name import DestinationName
+from app.domain.value_objects.address import Address
 from app.infrastructure.logging.logger import get_logger
 
 logger = get_logger(__name__)
@@ -57,12 +59,12 @@ class SaveDestinationUseCase:
             
             logger.info(f"Found coordinates: {coordinates.lat}, {coordinates.lon}")
             
-            # Create destination entity
+            # Create destination entity with value objects
             now = datetime.now(timezone.utc)
             destination = Destination(
                 id=None,  # Will be set by repository
-                name=request.name.strip(),
-                address=request.address.strip(),
+                name=DestinationName(request.name.strip()),
+                address=Address(request.address.strip()),
                 coordinates=coordinates,
                 created_at=now,
                 updated_at=now

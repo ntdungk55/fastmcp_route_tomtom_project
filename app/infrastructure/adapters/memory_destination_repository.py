@@ -52,7 +52,7 @@ class MemoryDestinationRepository(DestinationRepository):
         """Find a destination by its name"""
         try:
             for destination in self._destinations.values():
-                if destination.name.lower() == name.lower():
+                if str(destination.name).lower() == name.lower():
                     logger.info(f"Found destination by name: {name}")
                     return destination
             
@@ -93,8 +93,8 @@ class MemoryDestinationRepository(DestinationRepository):
             
             for destination in self._destinations.values():
                 id_match = not id or (destination.id == id)
-                name_match = not name or (name.lower() in destination.name.lower())
-                address_match = not address or (address.lower() in destination.address.lower())
+                name_match = not name or (name.lower() in str(destination.name).lower())
+                address_match = not address or (address.lower() in str(destination.address).lower())
                 
                 if id_match and name_match and address_match:
                     matching_destinations.append(destination)

@@ -4,9 +4,11 @@ from typing import List, Optional
 from app.application.ports.destination_repository import DestinationRepository
 from app.domain.entities.destination import Destination
 from app.domain.value_objects.latlon import LatLon
+from app.domain.value_objects.destination_name import DestinationName
+from app.domain.value_objects.address import Address
 from app.infrastructure.persistence.database.connection import DatabaseConnection
 from app.infrastructure.logging.logger import get_logger
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 logger = get_logger(__name__)
@@ -39,14 +41,14 @@ class SQLiteDestinationRepository(DestinationRepository):
                 existing = await cursor.fetchone()
                 
                 if existing:
-                    # Update existing destination
+                    # Update existing destination - convert value objects to strings
                     await cursor.execute("""
                         UPDATE destinations 
                         SET name = ?, address = ?, latitude = ?, longitude = ?, updated_at = ?
                         WHERE id = ?
                     """, (
-                        destination.name,
-                        destination.address,
+                        str(destination.name),  # Convert DestinationName to string
+                        str(destination.address),  # Convert Address to string
                         destination.coordinates.lat,
                         destination.coordinates.lon,
                         destination.updated_at.isoformat(),
@@ -54,15 +56,15 @@ class SQLiteDestinationRepository(DestinationRepository):
                     ))
                     logger.info(f"Updated destination with ID: {destination.id}")
                 else:
-                    # Insert new destination
+                    # Insert new destination - convert value objects to strings
                     await cursor.execute("""
                         INSERT INTO destinations 
                         (id, name, address, latitude, longitude, created_at, updated_at)
                         VALUES (?, ?, ?, ?, ?, ?, ?)
                     """, (
                         destination.id,
-                        destination.name,
-                        destination.address,
+                        str(destination.name),  # Convert DestinationName to string
+                        str(destination.address),  # Convert Address to string
                         destination.coordinates.lat,
                         destination.coordinates.lon,
                         destination.created_at.isoformat(),
@@ -200,11 +202,21 @@ class SQLiteDestinationRepository(DestinationRepository):
     
     def _row_to_destination(self, row: tuple) -> Destination:
         """Convert database row to Destination entity."""
+        # Parse datetimes and add timezone if not present
+        created_at = datetime.fromisoformat(row[5])
+        updated_at = datetime.fromisoformat(row[6])
+        
+        # Add UTC timezone if datetime is naive
+        if created_at.tzinfo is None:
+            created_at = created_at.replace(tzinfo=timezone.utc)
+        if updated_at.tzinfo is None:
+            updated_at = updated_at.replace(tzinfo=timezone.utc)
+        
         return Destination(
             id=row[0],
-            name=row[1],
-            address=row[2],
+            name=DestinationName(row[1]),  # Convert string to DestinationName
+            address=Address(row[2]),  # Convert string to Address
             coordinates=LatLon(row[3], row[4]),
-            created_at=datetime.fromisoformat(row[5]),
-            updated_at=datetime.fromisoformat(row[6])
+            created_at=created_at,
+            updated_at=updated_at
         )
