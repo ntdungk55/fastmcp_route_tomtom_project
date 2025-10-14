@@ -31,9 +31,9 @@ class SearchDestinationsUseCase:
             # Convert to DTOs
             destination_summaries = [
                 DestinationSummary(
-                    id=dest.id,
-                    name=dest.name,
-                    address=dest.address,
+                    id=dest.id or "",
+                    name=dest.name.value,
+                    address=dest.address.value,
                     latitude=dest.coordinates.lat,
                     longitude=dest.coordinates.lon,
                     created_at=dest.created_at.isoformat(),
