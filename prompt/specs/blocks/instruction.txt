@@ -1,0 +1,143 @@
+# HƯỚNG DẪN MÔ TẢ MỘT BLOCK (Dành cho Dev/BA)
+*Mục tiêu:* Chuẩn hoá mô tả **một block** (bước xử lý) để đội dev có thể triển khai và kiểm thử nhanh, nhất quán.
+Lược bớt nội dung nếu yêu cầu không cần đến.
+
+**Hướng dẫn mô tả block (draw.io):**
+- Chỉ ghi nội dung ngắn gọn, thể hiện rõ *mục tiêu* và *đầu ra/chặn chính* của block.
+- Nếu block chỉ thực hiện 1 phép kiểm tra (validate), chỉ cần ghi:
+  - Điều kiện kiểm tra/chặn (vd: "Check if API key is missing → Error")
+  - Giá trị trả về nếu pass/fail (vd: "OK nếu đủ, trả INVALID_KEY_MISSING nếu thiếu")
+- Bỏ qua các thông tin kỹ thuật/phụ trợ không liên quan trực tiếp tới chức năng block.
+
+**Ví dụ mô tả block đơn giản:**
+- "Validate số điểm trong routePlanningLocations ≥ 2. Nếu không, trả lỗi INVALID_LOCATIONS_COUNT."
+- "Kiểm tra xung đột departAt & arriveAt: nếu cùng tồn tại, trả PARAM_CONFLICT_TIME."
+
+**Lưu ý:** Nếu block chỉ *cảnh báo* hoặc *format dữ liệu*, ghi rõ hành động (vd: "Chuẩn hoá định dạng toạ độ các waypoint, không thay đổi số lượng điểm").
+
+---
+
+## ⚠️ QUY TẮC QUAN TRỌNG: TECHNOLOGY-AGNOSTIC
+
+**Các file block CHỈ mô tả NGHIỆP VỤ, KHÔNG chứa công nghệ/code cụ thể.**
+
+- ✅ Dùng JSON schema, Pseudocode, Generic types
+- ❌ KHÔNG dùng Python/JavaScript/Java/Go code, framework names, import statements
+
+---
+
+
+### Quy định đặt tên file
+
+- Định dạng: **BLOCK_ID + mô tả chức năng + `.md`**
+  - **BLOCK_ID**: mã định danh block theo hệ thống đặt tên (ví dụ: `BLK-2-05`, `S-12`)
+  - **mô tả chức năng**: ngắn gọn, viết bằng tiếng Anh hoặc Việt không dấu, dạng camelCase hoặc dash-case, phản ánh ngắn gọn mục đích/feature (ví dụ: ValidateInput, PlanRoute, ProcessOrder)
+- Tên file phải duy nhất trong phạm vi repo.
+- Không sử dụng khoảng trắng, ký tự lạ ngoài `-`, `_`, chữ thường/hoa và số.
+
+**Ví dụ:**
+- `BLK-1-01-ValidateInput.md`
+- `S-05-PlanRoute.md`
+- `BLK-3-10-ProcessOrder.md`
+
+---
+
+## 1) Khi nào **trigger** block này?
+> Xác định điều kiện/kích hoạt rõ ràng để tránh chạy sai ngữ cảnh.
+
+- **Sự kiện kích hoạt (Trigger):**
+  - [ ] Gọi trực tiếp từ block trước: *(ví dụ: sau “Validate input” thành công)*
+  - [ ] Message/Event đến: *(topic, key, version)*
+  - [ ] Lịch/Timer: *(cron, delay)*
+  - [ ] Webhook/Callback từ hệ thống ngoài
+- **Điều kiện tiền đề (Preconditions):**
+  - Business: *(ví dụ: trạng thái đơn = PENDING, số tiền > 0)*
+  - Kỹ thuật: *(ví dụ: token hợp lệ, kết nối DB sẵn sàng)*
+- **Điều kiện dừng/không chạy (Guards):**
+  - *(ví dụ: đã xử lý trước đó theo Idempotency-Key → bỏ qua)*
+
+---
+
+## 2) **Input, Output** và **các ràng buộc**
+### 2.1 Input
+- **Schema/kiểu dữ liệu:** (JSON/proto/DTO)  
+- **Bắt buộc:** trường nào *required*, điều kiện hợp lệ (regex, min/max, enum)  
+- **Nguồn:** từ block nào / từ API nào / từ event nào  
+- **Bảo mật:** trường *nhạy cảm* (không log thô)
+
+### 2.2 Output
+- **Kết quả trả về:** (giá trị, trạng thái)  
+- **Side-effects:** ghi DB, phát event, gọi API khác  
+- **Đảm bảo (Guarantees):** at-least-once / exactly-once, ordering, transactional outbox
+
+### 2.3 Ràng buộc thực thi (Runtime Constraints)
+- **Timeout mặc định:** … ms (API/DB khác nhau)  
+- **Retry & Backoff:** số lần, jitter, điều kiện cho phép retry  
+- **Idempotency:** key, phạm vi (per user/per order), TTL  
+- **Circuit Breaker:** ngưỡng lỗi mở/mở lại  
+- **Rate limit/Quota:** nếu có  
+- **Bảo mật & Quyền:** AuthN/AuthZ, scope/role cần thiết  
+
+---
+
+## 3) **Bảng tóm tắt điền nhanh**
+| Mục | Giá trị |
+|---|---|
+| **ID Block** | S-XX |
+| **Tên Block** | Động từ + Đối tượng (vd. CreatePayment) |
+| **Trigger** | From Decision S-YY = Yes / Event(topic=X) / Timer |
+| **Preconditions** | … |
+| **Input (schema)** | … |
+| **Output** | … |
+| **Side-effects** | DB table X, event Y |
+| **Timeout/Retry** | … ms, n lần, backoff |
+| **Idempotency** | Key = …, TTL = … |
+| **AuthZ/Scope** | role/scope cần có |
+
+---
+
+## 4) **Ví dụ điền mẫu (CreatePayment)**
+- **Trigger:** từ Decision *IsIdempotent? = No* hoặc event *payment.requested v1*  
+- **Preconditions:** order.status = PENDING; amount > 0; token hợp lệ  
+- **Input:** `{ orderId: string, amount: number, currency: 'VND'|'USD', userId: string }`  
+- **Output:** `{ paymentId, status: 'CREATED' }`  
+- **Side-effects:** insert `payments`, outbox -> topic `payment.created`  
+- **Constraints:** timeout 3s (DB), retry 2 lần (deadlock), idempotency-key = `userId+orderId` 24h  
+
+---
+
+## 5) **Liên kết (References)**
+> Ghi rõ các tài liệu, API docs, diagram, use case, hoặc file code liên quan để dev dễ tra cứu.
+
+- **Diagram:** (nếu có) link đến file diagram hoặc shape trong diagram  
+- **API Documentation:** link đến external API docs (nếu có)  
+- **Related Use Cases:** các use case/service liên quan trong code  
+- **Related Blocks:** các block khác có liên kết logic  
+- **Schemas:** link đến schema files (JSON Schema, OpenAPI, Proto, etc.)
+
+**Ví dụ:**
+- **Diagram:** `BLK-XX-CreatePayment` (trong `diagrams/payment-flow.drawio`)
+- **API Docs:** https://stripe.com/docs/api/payment_intents
+- **Related Use Cases:** `app/application/use_cases/create_payment.py`
+- **Related Blocks:** `BLK-YY-ValidatePayment`, `BLK-ZZ-ProcessPayment`
+
+---
+
+## 6) **Definition of Done (DoD)**
+> Checklist để đảm bảo block spec đã đầy đủ, rõ ràng, sẵn sàng cho dev triển khai.
+
+- [ ] File nằm đúng vị trí `specs/blocks/BLK-XX-TenBlock.md` và **ID khớp** với diagram  
+- [ ] **CHỈ MÔ TẢ NGHIỆP VỤ** - không chứa code/framework/công nghệ cụ thể
+- [ ] Phần **Trigger** có đầy đủ: sự kiện kích hoạt, preconditions, guards  
+- [ ] Phần **Input** có schema rõ ràng, ghi rõ required fields và validation rules  
+- [ ] Phần **Output** có kết quả trả về, side-effects, và guarantees  
+- [ ] Phần **Runtime Constraints** có timeout, retry, idempotency (nếu cần)  
+- [ ] Có **bảng tóm tắt** đầy đủ các mục quan trọng  
+- [ ] Có **ví dụ cụ thể** với input/output thực tế (ít nhất 1-2 ví dụ)  
+- [ ] Có **liên kết** đến diagram, API docs, use cases liên quan  
+- [ ] **Error cases** được mô tả rõ ràng (error codes, messages, HTTP status)  
+- [ ] Người đọc có thể hiểu và triển khai **không cần hỏi thêm**
+
+---
+
+> **Mẹo:** Giữ mỗi block làm **một việc duy nhất** (Single Responsibility). Nếu phần "Không thuộc phạm vi" dài hơn 3 dòng, cân nhắc tách block.

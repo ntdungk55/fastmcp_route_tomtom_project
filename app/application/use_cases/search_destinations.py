@@ -4,11 +4,7 @@ from app.application.dto.search_destinations_dto import SearchDestinationsReques
 from app.application.ports.destination_repository import DestinationRepository
 from app.infrastructure.logging.logger import get_logger
 
-logger = get_logger(
-    name=__name__,
-    layer="application",
-    component="use_cases"
-)
+logger = get_logger(__name__)
 
 
 class SearchDestinationsUseCase:
