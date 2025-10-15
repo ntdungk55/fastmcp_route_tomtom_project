@@ -206,17 +206,113 @@
 
 ---
 
-## 6) Definition of Done (DoD)
-- [x] File nằm đúng vị trí `specs/blocks/BLK-1-01-ValidateInputParam.md`  
-- [x] Spec không phụ thuộc vào ngôn ngữ lập trình cụ thể (technology-agnostic)
+## 6) **Nghiệm thu kết quả (Acceptance Criteria)**
+
+### 6.1 Tiêu chí nghiệm thu chung
+- [ ] **Functional Requirements:** Block validate đúng tất cả TomTom routing parameters theo business rules
+- [ ] **Input Validation:** Xử lý đúng các trường hợp input hợp lệ và không hợp lệ
+- [ ] **Output Format:** Trả về validated params hoặc ValidationError với format chuẩn
+- [ ] **Error Handling:** Trả đúng error codes và messages theo mapping table
+- [ ] **Performance:** Validation hoàn thành trong thời gian < 50ms (synchronous)
+- [ ] **Security:** Validate input để tránh injection attacks, không expose sensitive data
+
+### 6.2 Test Cases bắt buộc
+
+#### 6.2.1 Happy Path Tests
+- [ ] **Valid Basic Route:** Test với 2 điểm hợp lệ, travelMode="car" → success
+- [ ] **Valid Complex Route:** Test với waypoints, traffic=true, departAt → success
+- [ ] **Valid Alternative Routes:** Test với maxAlternatives=3 → success
+
+#### 6.2.2 Error Handling Tests  
+- [ ] **Invalid Locations Count:** Test với < 2 điểm → INVALID_LOCATIONS_COUNT
+- [ ] **Invalid Coordinate Format:** Test với lat,lon sai format → INVALID_LOCATION_FORMAT
+- [ ] **Invalid Coordinate Range:** Test với lat/lon ngoài WGS84 → INVALID_COORD_RANGE
+- [ ] **Time Conflict:** Test với departAt + arriveAt → PARAM_CONFLICT_TIME
+- [ ] **Invalid Max Alternatives:** Test với maxAlternatives > 5 → INVALID_MAX_ALTERNATIVES
+- [ ] **Invalid Travel Mode:** Test với travelMode không hợp lệ → INVALID_TRAVEL_MODE
+
+#### 6.2.3 Edge Cases Tests
+- [ ] **Boundary Coordinates:** Test với lat=90, lon=180 (boundary values)
+- [ ] **Empty Locations:** Test với routePlanningLocations="" → INVALID_LOCATIONS_COUNT
+- [ ] **Circle Waypoints:** Test với circle() format và computeBestOrder conflict
+- [ ] **Max Waypoints:** Test với 150 waypoints (TomTom limit)
+
+### 6.3 Ví dụ Test Cases mẫu
+
+**Ví dụ cho block "ValidateInputParams":**
+```json
+// Test Case 1: Valid Input
+Input: {
+  "routePlanningLocations": "52.50931,13.42936:52.50274,13.43872",
+  "travelMode": "car",
+  "traffic": true
+}
+Expected: {
+  "status": "valid",
+  "validated_data": { /* same as input */ }
+}
+
+// Test Case 2: Invalid - Single Location
+Input: {
+  "routePlanningLocations": "52.50931,13.42936"
+}
+Expected: {
+  "status": "error",
+  "code": "INVALID_LOCATIONS_COUNT",
+  "message": "Cần ít nhất 2 điểm (xuất phát và đích) để tính tuyến đường."
+}
+
+// Test Case 3: Time Conflict
+Input: {
+  "routePlanningLocations": "52.50931,13.42936:52.50274,13.43872",
+  "departAt": "2024-01-01T10:00:00Z",
+  "arriveAt": "2024-01-01T12:00:00Z"
+}
+Expected: {
+  "status": "error",
+  "code": "PARAM_CONFLICT_TIME",
+  "message": "`departAt` và `arriveAt` không thể dùng cùng nhau. Hãy chọn một trong hai."
+}
+```
+
+### 6.4 Checklist nghiệm thu cuối
+- [ ] **Code Review:** Code đã được review bởi senior developer
+- [ ] **Unit Tests:** Tất cả test cases đã pass (coverage ≥ 95%)
+- [ ] **Integration Tests:** Test tích hợp với BLK-1-00 và BLK-1-02
+- [ ] **Documentation:** Code có comment và documentation đầy đủ
+- [ ] **Performance Test:** Đáp ứng < 50ms validation time
+- [ ] **Security Review:** Đã kiểm tra input sanitization
+- [ ] **Deployment:** Deploy thành công và hoạt động ổn định
+
+---
+
+## 7) **Definition of Done (DoD)**
+
+### 7.1 Spec Documentation
+- [x] File nằm đúng vị trí `specs/blocks/BLK-1-01-ValidateInputParam.md`
+- [x] **CHỈ MÔ TẢ NGHIỆP VỤ** - không chứa code/framework/công nghệ cụ thể
 - [x] Phần **Trigger** có đầy đủ: sự kiện kích hoạt, preconditions, guards
 - [x] Phần **Input** có schema rõ ràng, ghi rõ required fields và validation rules
-- [x] Phần **Output** có kết quả trả về (success/error cases)
+- [x] Phần **Output** có kết quả trả về, side-effects, và guarantees
+- [x] Phần **Runtime Constraints** có timeout, retry, idempotency (nếu cần)
 - [x] Có **bảng tóm tắt** đầy đủ các mục quan trọng
 - [x] Có **ví dụ cụ thể** với input/output thực tế (ít nhất 2-3 ví dụ)
-- [x] Có **liên kết** đến related blocks và code
-- [x] **Error cases** được mô tả rõ ràng (error codes, messages)
-- [x] Không bao gồm validation API key (được xử lý ở block khác)
+- [x] Có **liên kết** đến diagram, API docs, use cases liên quan
+- [x] **Error cases** được mô tả rõ ràng (error codes, messages, HTTP status)
+- [x] Người đọc có thể hiểu và triển khai **không cần hỏi thêm**
+
+### 7.2 Acceptance Criteria
+- [x] **Tiêu chí nghiệm thu chung** đã được định nghĩa rõ ràng
+- [x] **Test Cases bắt buộc** đã được liệt kê đầy đủ (Happy Path, Error Handling, Edge Cases)
+- [x] **Ví dụ Test Cases** cụ thể với input/output thực tế
+- [x] **Checklist nghiệm thu cuối** đã được xác định
+- [x] Các tiêu chí nghiệm thu phù hợp với độ phức tạp của block
+
+### 7.3 Implementation Ready
+- [x] Spec đã được review và approve bởi BA/Product Owner
+- [x] Dev team đã hiểu rõ requirements và có thể bắt đầu implement
+- [x] Test team đã có đủ thông tin để viết test cases
+- [x] Không còn câu hỏi mở hoặc ambiguity trong spec
 
 ---
 
