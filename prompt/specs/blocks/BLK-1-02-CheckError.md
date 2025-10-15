@@ -143,6 +143,74 @@ Mục tiêu: Kiểm tra xem có lỗi validation xảy ra sau BLK-1-01 hay khôn
 
 ---
 
+## 6) **Nghiệm thu kết quả (Acceptance Criteria)**
+
+### 6.1 Tiêu chí nghiệm thu chung
+- [ ] **Functional Requirements:** Block kiểm tra đúng validation result và phân nhánh xử lý
+- [ ] **Input Validation:** Xử lý đúng các trường hợp validation_result hợp lệ và không hợp lệ
+- [ ] **Output Format:** Chuyển tiếp đúng đến BLK-1-03 (error) hoặc BLK-1-04/BLK-1-07 (success)
+- [ ] **Error Handling:** Xử lý đúng các trường hợp validation_result null/undefined
+- [ ] **Performance:** Kiểm tra hoàn thành trong thời gian < 10ms (simple boolean check)
+- [ ] **Security:** Không expose sensitive data trong routing decision
+
+### 6.2 Test Cases bắt buộc
+
+#### 6.2.1 Happy Path Tests
+- [ ] **Valid Success Result:** Test với is_valid=true, errors=null → forward to success path
+- [ ] **Valid Error Result:** Test với is_valid=false, errors=[...] → forward to error path
+
+#### 6.2.2 Error Handling Tests  
+- [ ] **Null Validation Result:** Test với validation_result=null → default to error path
+- [ ] **Invalid Structure:** Test với validation_result thiếu required fields → default to error path
+- [ ] **Undefined Result:** Test với validation_result=undefined → log critical error
+
+#### 6.2.3 Edge Cases Tests
+- [ ] **Empty Errors Array:** Test với is_valid=false, errors=[] → forward to error path
+- [ ] **Mixed State:** Test với is_valid=true nhưng có errors → forward to error path
+- [ ] **Malformed Data:** Test với validation_result có cấu trúc sai → default to error path
+
+### 6.3 Ví dụ Test Cases mẫu
+
+**Ví dụ cho block "CheckError":**
+```json
+// Test Case 1: Success Path
+Input: {
+  "validation_result": {
+    "is_valid": true,
+    "errors": null,
+    "validated_data": {"routePlanningLocations": "52.50931,13.42936:52.50274,13.43872"}
+  }
+}
+Expected: Forward to BLK-1-04 or BLK-1-07 (success path)
+
+// Test Case 2: Error Path
+Input: {
+  "validation_result": {
+    "is_valid": false,
+    "errors": [{"code": "INVALID_LOCATIONS_COUNT", "message": "Cần ít nhất 2 điểm"}],
+    "validated_data": null
+  }
+}
+Expected: Forward to BLK-1-03 (error path)
+
+// Test Case 3: Null Input
+Input: {
+  "validation_result": null
+}
+Expected: Default to error path, log critical error
+```
+
+### 6.4 Checklist nghiệm thu cuối
+- [ ] **Code Review:** Code đã được review bởi senior developer
+- [ ] **Unit Tests:** Tất cả test cases đã pass (coverage ≥ 90%)
+- [ ] **Integration Tests:** Test tích hợp với BLK-1-01, BLK-1-03, BLK-1-04
+- [ ] **Documentation:** Code có comment và documentation đầy đủ
+- [ ] **Performance Test:** Đáp ứng < 10ms decision time
+- [ ] **Security Review:** Đã kiểm tra data handling
+- [ ] **Deployment:** Deploy thành công và hoạt động ổn định
+
+---
+
 ## 7) Decision Logic (Pseudo-code)
 ```python
 def check_error(validation_result: ValidationResult) -> str:

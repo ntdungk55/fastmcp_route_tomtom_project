@@ -152,14 +152,101 @@ Mục tiêu: Lắng nghe và nhận request từ MCP Client, parse payload ban �
 
 ---
 
-## 7) Definition of Done (DoD)
+## 6) **Nghiệm thu kết quả (Acceptance Criteria)**
+
+### 6.1 Tiêu chí nghiệm thu chung
+- [ ] **Functional Requirements:** Block nhận và parse đúng JSON-RPC 2.0 requests từ MCP Client
+- [ ] **Input Validation:** Xử lý đúng các trường hợp JSON-RPC hợp lệ và không hợp lệ
+- [ ] **Output Format:** Chuyển tiếp parsed request object đúng format cho BLK-1-01
+- [ ] **Error Handling:** Trả đúng JSON-RPC error codes theo specification
+- [ ] **Performance:** Xử lý request trong thời gian < 100ms (parsing overhead)
+- [ ] **Security:** Không log sensitive data, validate API key nếu cần
+
+### 6.2 Test Cases bắt buộc
+
+#### 6.2.1 Happy Path Tests
+- [ ] **Valid JSON-RPC Request:** Test với request hợp lệ, kiểm tra parsed object đúng
+- [ ] **Normal MCP Tool Call:** Test với method "tools/call" và params hợp lệ
+
+#### 6.2.2 Error Handling Tests  
+- [ ] **Invalid JSON:** Test với JSON không hợp lệ → JSON-RPC error -32700
+- [ ] **Missing Required Fields:** Test thiếu jsonrpc/method/params → JSON-RPC error -32600
+- [ ] **Unknown Method:** Test với method không tồn tại → JSON-RPC error -32601
+- [ ] **Server Overload:** Test khi server quá tải → JSON-RPC error -32000
+
+#### 6.2.3 Edge Cases Tests
+- [ ] **Empty Request:** Test với request rỗng
+- [ ] **Malformed JSON-RPC:** Test với jsonrpc != "2.0"
+- [ ] **Large Payload:** Test với payload lớn (boundary testing)
+- [ ] **Concurrent Requests:** Test xử lý nhiều requests đồng thời
+
+### 6.3 Ví dụ Test Cases mẫu
+
+**Ví dụ cho block "ListenMCPRequest":**
+```json
+// Test Case 1: Valid Request
+Input: {
+  "jsonrpc": "2.0",
+  "id": "req-123",
+  "method": "tools/call",
+  "params": {
+    "name": "calculate_route",
+    "arguments": {"origin": "Hanoi", "destination": "HCMC"}
+  }
+}
+Expected: Parsed object forwarded to BLK-1-01 with correct structure
+
+// Test Case 2: Invalid JSON
+Input: {"jsonrpc": "2.0", "method": "tools/call" // missing closing brace
+Expected: JSON-RPC error -32700 (Parse error)
+
+// Test Case 3: Missing Method
+Input: {
+  "jsonrpc": "2.0",
+  "id": "req-123",
+  "params": {"name": "calculate_route"}
+}
+Expected: JSON-RPC error -32600 (Invalid Request)
+```
+
+### 6.4 Checklist nghiệm thu cuối
+- [ ] **Code Review:** Code đã được review bởi senior developer
+- [ ] **Unit Tests:** Tất cả test cases đã pass (coverage ≥ 90%)
+- [ ] **Integration Tests:** Test tích hợp với MCP Client và BLK-1-01
+- [ ] **Documentation:** Code có comment và documentation đầy đủ
+- [ ] **Performance Test:** Đáp ứng < 100ms parsing time
+- [ ] **Security Review:** Đã kiểm tra logging và API key validation
+- [ ] **Deployment:** Deploy thành công và hoạt động ổn định
+
+---
+
+## 7) **Definition of Done (DoD)**
+
+### 7.1 Spec Documentation
 - [x] File nằm đúng vị trí `specs/blocks/BLK-1-00-ListenMCPRequest.md`
-- [x] Có Trigger/Preconditions/Guards rõ ràng
-- [x] Input/Output xác định, có ví dụ cụ thể
-- [x] Ràng buộc runtime nêu rõ (timeout, auth)
-- [x] Có bảng tóm tắt
-- [x] Error cases được mô tả với JSON-RPC error codes
-- [x] Liên kết đến diagram và code liên quan
+- [x] **CHỈ MÔ TẢ NGHIỆP VỤ** - không chứa code/framework/công nghệ cụ thể
+- [x] Phần **Trigger** có đầy đủ: sự kiện kích hoạt, preconditions, guards
+- [x] Phần **Input** có schema rõ ràng, ghi rõ required fields và validation rules
+- [x] Phần **Output** có kết quả trả về, side-effects, và guarantees
+- [x] Phần **Runtime Constraints** có timeout, retry, idempotency (nếu cần)
+- [x] Có **bảng tóm tắt** đầy đủ các mục quan trọng
+- [x] Có **ví dụ cụ thể** với input/output thực tế (ít nhất 1-2 ví dụ)
+- [x] Có **liên kết** đến diagram, API docs, use cases liên quan
+- [x] **Error cases** được mô tả rõ ràng (error codes, messages, HTTP status)
+- [x] Người đọc có thể hiểu và triển khai **không cần hỏi thêm**
+
+### 7.2 Acceptance Criteria
+- [x] **Tiêu chí nghiệm thu chung** đã được định nghĩa rõ ràng
+- [x] **Test Cases bắt buộc** đã được liệt kê đầy đủ (Happy Path, Error Handling, Edge Cases)
+- [x] **Ví dụ Test Cases** cụ thể với input/output thực tế
+- [x] **Checklist nghiệm thu cuối** đã được xác định
+- [x] Các tiêu chí nghiệm thu phù hợp với độ phức tạp của block
+
+### 7.3 Implementation Ready
+- [x] Spec đã được review và approve bởi BA/Product Owner
+- [x] Dev team đã hiểu rõ requirements và có thể bắt đầu implement
+- [x] Test team đã có đủ thông tin để viết test cases
+- [x] Không còn câu hỏi mở hoặc ambiguity trong spec
 
 ---
 
