@@ -12,7 +12,7 @@ class MCPServerConstants:
     DESCRIPTION = "TomTom Route MCP Server with Clean Architecture"
     
     # Default server settings
-    DEFAULT_HOST = "192.168.1.3"
+    DEFAULT_HOST = "192.168.1.7"
     DEFAULT_PORT = 8081
     DEFAULT_TRANSPORT = "streamable-http"
     
@@ -20,7 +20,7 @@ class MCPServerConstants:
     MCP_PROTOCOL_VERSION = "2024-11-05"
     JSONRPC_VERSION = "2.0"
     
-    # Tool categories - sử dụng constants từ MCPToolNames
+    # Tool categories - use constants from MCPToolNames
     ROUTING_TOOLS = ["calculate_route"]
     GEOCODING_TOOLS = ["geocode_address", "get_intersection_position", "get_street_center_position"]
     TRAFFIC_TOOLS = ["get_traffic_condition", "get_route_with_traffic", "analyze_route_traffic"]
@@ -29,11 +29,11 @@ class MCPServerConstants:
 
 
 class MCPTypeConstants:
-    """MCP Type constants for Literal types - sử dụng constants từ Domain layer."""
-    # Import constants from Domain layer để tránh duplicate
+    """MCP Type constants for Literal types - use constants from Domain layer."""
+    # Import constants from Domain layer to avoid duplicate
     from app.domain.constants.api_constants import TravelModeConstants
     
-    # Travel mode values for Literal type - sử dụng constants từ Domain
+    # Travel mode values for Literal type - use constants from Domain
     TRAVEL_MODE_CAR = TravelModeConstants.CAR
     TRAVEL_MODE_BICYCLE = TravelModeConstants.BICYCLE
     TRAVEL_MODE_FOOT = TravelModeConstants.FOOT
@@ -267,9 +267,9 @@ class MCPToolDescriptions:
 class MCPErrorMessages:
     """MCP Error messages."""
     # Server errors
-    SERVER_STARTUP_ERROR = "❌ Error starting server: {error}"
-    CONFIG_ERROR = "❌ Configuration error: {error}"
-    API_KEY_MISSING = "❌ TOMTOM_API_KEY environment variable is required!"
+    SERVER_STARTUP_ERROR = "[ERROR] Error starting server: {error}"
+    CONFIG_ERROR = "[ERROR] Configuration error: {error}"
+    API_KEY_MISSING = "[ERROR] TOMTOM_API_KEY environment variable is required!"
     
     # Tool errors
     TOOL_EXECUTION_ERROR = "Tool execution failed: {error}"
@@ -315,42 +315,42 @@ class MCPSuccessMessages:
     """MCP Success messages."""
     SERVER_STARTED = "🚀 TomTom MCP Server started successfully"
     SERVER_STOPPED = "👋 Server stopped by user"
-    API_KEY_CONFIGURED = "✅ TomTom API key configured"
-    TOOL_EXECUTED = "✅ Tool executed successfully: {tool_name}"
+    API_KEY_CONFIGURED = "[SUCCESS] TomTom API key configured"
+    TOOL_EXECUTED = "[SUCCESS] Tool executed successfully: {tool_name}"
     
     # Destination management success messages
-    DESTINATION_UPDATED_SUCCESS = "Điểm đến đã được cập nhật thành công"
-    DESTINATION_SAVED_SUCCESS = "Điểm đến đã được lưu thành công"
-    DESTINATION_DELETED_SUCCESS = "Điểm đến đã được xóa thành công"
-    DESTINATION_LISTED_SUCCESS = "Danh sách điểm đến đã được lấy thành công"
+    DESTINATION_UPDATED_SUCCESS = "Destination updated successfully"
+    DESTINATION_SAVED_SUCCESS = "Destination saved successfully"
+    DESTINATION_DELETED_SUCCESS = "Destination deleted successfully"
+    DESTINATION_LISTED_SUCCESS = "Destination list retrieved successfully"
     
     # Destination management warning/error messages
-    DESTINATION_UPDATE_DETAILS_NOT_FOUND = "Không thể lấy thông tin chi tiết về điểm đến đã cập nhật"
-    DESTINATION_UPDATE_FAILED = "Cập nhật điểm đến thất bại"
-    DESTINATION_DELETE_VERIFICATION_FAILED = "Không thể xác minh việc xóa điểm đến"
-    DESTINATION_DELETE_FAILED = "Xóa điểm đến thất bại"
-    DESTINATION_DELETE_VERIFIED = "Đã xác minh: Điểm đến đã được xóa khỏi lưu trữ"
-    DESTINATION_STILL_EXISTS = "Điểm đến vẫn còn tồn tại trong lưu trữ sau khi thực hiện xóa"
-    DESTINATION_SEARCH_CRITERIA_MISSING = "Vui lòng cung cấp tên hoặc địa chỉ để tìm kiếm điểm đến cần xóa"
-    DESTINATION_NOT_FOUND = "Không tìm thấy điểm đến khớp với tiêu chí tìm kiếm"
-    DESTINATION_MULTIPLE_FOUND = "Tìm thấy {count} điểm đến khớp. Vui lòng cung cấp thông tin cụ thể hơn"
-    DESTINATION_BULK_DELETE_SUCCESS = "Đã xóa thành công {count} điểm đến"
-    DESTINATION_PARTIAL_DELETE_SUCCESS = "Đã xóa {deleted_count} điểm đến, {failed_count} điểm đến thất bại"
+    DESTINATION_UPDATE_DETAILS_NOT_FOUND = "Cannot get details of updated destination"
+    DESTINATION_UPDATE_FAILED = "Destination update failed"
+    DESTINATION_DELETE_VERIFICATION_FAILED = "Cannot verify destination deletion"
+    DESTINATION_DELETE_FAILED = "Destination deletion failed"
+    DESTINATION_DELETE_VERIFIED = "Verified: Destination has been removed from storage"
+    DESTINATION_STILL_EXISTS = "Destination still exists in storage after deletion"
+    DESTINATION_SEARCH_CRITERIA_MISSING = "Please provide name or address to search for destination to delete"
+    DESTINATION_NOT_FOUND = "No destination found matching search criteria"
+    DESTINATION_MULTIPLE_FOUND = "Found {count} matching destinations. Please provide more specific information"
+    DESTINATION_BULK_DELETE_SUCCESS = "Successfully deleted {count} destinations"
+    DESTINATION_PARTIAL_DELETE_SUCCESS = "Deleted {deleted_count} destinations, {failed_count} destinations failed"
     
     # Route calculation success messages
-    ROUTE_CALCULATED_SUCCESS = "Tuyến đường đã được tính toán thành công"
-    ROUTE_WITH_TRAFFIC_SUCCESS = "Tuyến đường có thông tin giao thông đã được tính toán thành công"
-    DETAILED_ROUTE_SUCCESS = "Tuyến đường chi tiết đã được tính toán thành công"
+    ROUTE_CALCULATED_SUCCESS = "Route calculated successfully"
+    ROUTE_WITH_TRAFFIC_SUCCESS = "Route with traffic information calculated successfully"
+    DETAILED_ROUTE_SUCCESS = "Detailed route calculated successfully"
     
     # Geocoding success messages
-    ADDRESS_GEOCODED_SUCCESS = "Địa chỉ đã được chuyển đổi thành tọa độ thành công"
-    INTERSECTION_FOUND_SUCCESS = "Giao lộ đã được tìm thấy thành công"
-    STREET_CENTER_FOUND_SUCCESS = "Trung tâm đường phố đã được tìm thấy thành công"
+    ADDRESS_GEOCODED_SUCCESS = "Address converted to coordinates successfully"
+    INTERSECTION_FOUND_SUCCESS = "Intersection found successfully"
+    STREET_CENTER_FOUND_SUCCESS = "Street center found successfully"
     
     # Traffic analysis success messages
-    TRAFFIC_CONDITION_SUCCESS = "Thông tin tình trạng giao thông đã được lấy thành công"
-    TRAFFIC_ANALYSIS_SUCCESS = "Phân tích tình trạng giao thông đã được thực hiện thành công"
-    ADDRESS_TRAFFIC_CHECK_SUCCESS = "Tình trạng giao thông giữa các địa chỉ đã được kiểm tra thành công"
+    TRAFFIC_CONDITION_SUCCESS = "Traffic condition information retrieved successfully"
+    TRAFFIC_ANALYSIS_SUCCESS = "Traffic analysis completed successfully"
+    ADDRESS_TRAFFIC_CHECK_SUCCESS = "Traffic condition between addresses checked successfully"
 
 
 class MCPLogMessages:
@@ -370,15 +370,15 @@ class MCPLogMessages:
 """
     
     TOOL_LIST = """🛠️  Available tools:
-   • calculate_route - Tính toán tuyến đường cơ bản
-   • geocode_address - Chuyển địa chỉ thành tọa độ
-   • get_intersection_position - Tìm tọa độ giao lộ
-   • get_street_center_position - Tìm trung tâm đường phố
-   • get_traffic_condition - Lấy thông tin giao thông
-   • get_route_with_traffic - Tuyến đường có traffic
-   • get_via_route - Tuyến đường qua điểm trung gian
-   • analyze_route_traffic - Phân tích traffic tuyến đường
-   • check_traffic_between_addresses - Kiểm tra traffic giữa địa chỉ"""
+   • calculate_route - Calculate basic route
+   • geocode_address - Convert address to coordinates
+   • get_intersection_position - Find intersection coordinates
+   • get_street_center_position - Find street center position
+   • get_traffic_condition - Get traffic information
+   • get_route_with_traffic - Route with traffic
+   • get_via_route - Route via intermediate points
+   • analyze_route_traffic - Analyze route traffic
+   • check_traffic_between_addresses - Check traffic between addresses"""
     
     # API key setup instructions
     API_KEY_SETUP = """Please set your TomTom API key:
@@ -420,7 +420,7 @@ class MCPDetailedRouteLogMessages:
     ROUTE_ROAD = "   Road: {road_name}"
     
     # Error logging
-    ERROR_HEADER = "\n❌ Error in get_detailed_route: {error}"
+    ERROR_HEADER = "\n[ERROR] Error in get_detailed_route: {error}"
 
 
 class MCPDestinationErrorMessages:

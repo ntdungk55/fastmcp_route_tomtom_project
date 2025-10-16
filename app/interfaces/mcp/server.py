@@ -371,10 +371,10 @@ async def save_destination_tool(
         
         # Log verification status
         if result.success:
-            print(f"\n✅ Save Destination Success: {result.message}")
+            print(f"\n[SUCCESS] Save Destination Success: {result.message}")
             print(f"📊 Destination ID: {result.destination_id}")
         else:
-            print(f"\n❌ Save Destination Failed: {result.error}")
+            print(f"\n[ERROR] Save Destination Failed: {result.error}")
         
         # Trả về response dưới dạng dict
         return asdict(result)
@@ -430,10 +430,10 @@ async def delete_destination_tool(
         
         # Log verification status
         if result.success:
-            print(f"\n✅ Delete Destination Success: {result.message}")
+            print(f"\n[SUCCESS] Delete Destination Success: {result.message}")
             print(f"📊 Deleted: {target_destination.name} at {target_destination.address}")
         else:
-            print(f"\n❌ Delete Destination Failed: {result.error}")
+            print(f"\n[ERROR] Delete Destination Failed: {result.error}")
         
         # Trả về response dưới dạng dict
         return asdict(result)
@@ -459,10 +459,10 @@ async def update_destination_tool(
         
         # Log verification status
         if result.success:
-            print(f"\n✅ Update Destination Success: {result.message}")
+            print(f"\n[SUCCESS] Update Destination Success: {result.message}")
             print(f"📊 Destination ID: {result.destination_id}")
         else:
-            print(f"\n❌ Update Destination Failed: {result.error}")
+            print(f"\n[ERROR] Update Destination Failed: {result.error}")
         
         # Trả về response dưới dạng dict
         return asdict(result)

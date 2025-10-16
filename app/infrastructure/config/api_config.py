@@ -5,13 +5,14 @@ Thuộc Infrastructure layer - xử lý external configuration.
 import os
 from typing import Optional
 from dataclasses import dataclass
+from app.interfaces.constants.mcp_constants import MCPServerConstants
 
 @dataclass(frozen=True)
 class ApiConfig:
     """Configuration cho API keys và settings."""
     tomtom_api_key: str
-    server_host: str = "192.168.1.3"
-    server_port: int = 8081
+    server_host: str = MCPServerConstants.DEFAULT_HOST
+    server_port: int = MCPServerConstants.DEFAULT_PORT
     
     @classmethod
     def from_environment(cls) -> "ApiConfig":
@@ -22,8 +23,8 @@ class ApiConfig:
         
         return cls(
             tomtom_api_key=api_key,
-            server_host=os.getenv("SERVER_HOST", "192.168.1.3"),
-            server_port=int(os.getenv("SERVER_PORT", "8081"))
+            server_host=os.getenv("SERVER_HOST", MCPServerConstants.DEFAULT_HOST),
+            server_port=int(os.getenv("SERVER_PORT", MCPServerConstants.DEFAULT_PORT))
         )
 
 class ConfigService:

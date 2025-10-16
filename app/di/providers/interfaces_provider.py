@@ -1,8 +1,8 @@
 """Interfaces layer dependencies provider."""
 
 from typing import Dict, Any
-from app.interfaces.constants.mcp_constants import MCPServerConstants
 
+from app.interfaces.constants.mcp_constants import MCPServerConstants
 
 class InterfacesProvider:
     """Provider for interfaces layer dependencies."""
@@ -16,8 +16,8 @@ class InterfacesProvider:
         return {
             "server_name": MCPServerConstants.SERVER_NAME,
             "default_transport": MCPServerConstants.DEFAULT_TRANSPORT,
-            "server_host": MCPServerConstants.SERVER_HOST,
-            "server_port": MCPServerConstants.SERVER_PORT
+            "server_host": MCPServerConstants.DEFAULT_HOST,
+            "server_port": MCPServerConstants.DEFAULT_PORT
         }
     
     def get_mcp_tools(self) -> Dict[str, Any]:

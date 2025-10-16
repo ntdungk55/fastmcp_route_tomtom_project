@@ -49,7 +49,7 @@ run:
 start-server:
 	uv run start_server.py
 
-# Run HTTP MCP server on 192.168.1.3:8081
+# Run HTTP MCP server on DEFAULT_HOST:DEFAULT_PORT
 start-http:
 	uv run start_http_server.py
 

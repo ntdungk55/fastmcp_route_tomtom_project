@@ -66,8 +66,6 @@ class DetailedRouteResponse:
     # 2. Thời gian đi
     total_duration_seconds: int
     total_duration_formatted: str  # "15 giờ 30 phút"
-    departure_time: Optional[str] = None
-    arrival_time: Optional[str] = None
     
     # 3. Cách di chuyển
     travel_mode: str  # "car", "bicycle", "foot", etc.
@@ -77,11 +75,15 @@ class DetailedRouteResponse:
     main_route: AlternativeRoute
     
     # 5. Cách di chuyển khác (kèm trạng thái đường đi)
-    alternative_routes: List[AlternativeRoute] = None
+    alternative_routes: List[AlternativeRoute]
     
     # Metadata
+    request_id: str
+    
+    # Optional fields with default values
+    departure_time: Optional[str] = None
+    arrival_time: Optional[str] = None
     calculated_at: str = None
-    request_id: Optional[str] = None
     
     def __post_init__(self):
         if self.calculated_at is None:
