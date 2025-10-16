@@ -10,6 +10,7 @@ Server này đã được refactor để tuân thủ Clean Architecture:
 
 import os
 import sys
+import uuid
 from dataclasses import asdict
 from pathlib import Path
 from typing import Literal, Union
@@ -48,6 +49,7 @@ from app.application.dto.traffic_dto import (
 # DI Container
 from app.di.container import Container
 from app.application.use_cases.save_destination import SaveDestinationUseCase
+from app.application.services.route_traffic_service import get_route_traffic_service
 from fastmcp import FastMCP
 
 # Constants
@@ -64,6 +66,9 @@ TravelModeLiteral = Literal["car", "bicycle", "foot"]
 # Container instance với Dependency Injection
 _container = Container()
 
+# Route Traffic Service
+_route_traffic_service = get_route_traffic_service()
+
 # FastMCP tool definitions
 @mcp.tool(name=MCPToolNames.CALCULATE_ROUTE)
 async def calculate_route_tool(
@@ -75,32 +80,47 @@ async def calculate_route_tool(
 ) -> dict:
     f"""{MCPToolDescriptions.CALCULATE_ROUTE}"""
     try:
-        validation_service = _container.validation_service
-        origin_lat_float = validation_service.safe_float_convert(origin_lat)
-        origin_lon_float = validation_service.safe_float_convert(origin_lon)
-        dest_lat_float = validation_service.safe_float_convert(dest_lat)
-        dest_lon_float = validation_service.safe_float_convert(dest_lon)
-        
-        cmd = CalculateRouteCommand(
-            origin=LatLon(origin_lat_float, origin_lon_float),
-            destination=LatLon(dest_lat_float, dest_lon_float),
-            travel_mode=TravelMode(travel_mode),
-        )
-        plan = await _container.calculate_route.handle(cmd)
-        result = {
-            "summary": asdict(plan.summary),
-            "sections": [asdict(s) for s in plan.sections],
+        # Sử dụng integrated flow service
+        request_data = {
+            "jsonrpc": "2.0",
+            "id": f"req-{uuid.uuid4().hex[:8]}",
+            "method": "tools/call",
+            "params": {
+                "name": "calculate_route",
+                "arguments": {
+                    "origin_lat": origin_lat,
+                    "origin_lon": origin_lon,
+                    "dest_lat": dest_lat,
+                    "dest_lon": dest_lon,
+                    "travel_mode": travel_mode
+                }
+            }
         }
         
+        result = await _route_traffic_service.process_route_traffic(request_data)
+        
         # Log the result
-        print(f"\n🔍 MCP Server Response for calculate_route:")
-        print(f"📏 Distance: {plan.summary.distance_m:,} meters")
-        print(f"⏱️ Duration: {plan.summary.duration_s:,} seconds")
-        print(f"🚧 Sections: {len(plan.sections)}")
+        if "result" in result:
+            print(f"\nMCP Server Response for calculate_route:")
+            print(f"Request ID: {result['id']}")
+            print(f"Success: {result['result'].get('type')}")
+            if 'summary' in result['result']:
+                summary = result['result']['summary']
+                print(f"Distance: {summary.get('distance', {}).get('formatted', 'N/A')}")
+                print(f"Duration: {summary.get('duration', {}).get('formatted', 'N/A')}")
+                print(f"Traffic: {summary.get('traffic_info', 'N/A')}")
+            
+            # Show route overview
+            route_overview = result['result'].get('route_overview', {})
+            if route_overview:
+                print(f"Main roads: {', '.join(route_overview.get('main_roads', []))}")
+                print(f"Via cities: {', '.join(route_overview.get('via_cities', []))}")
+        else:
+            print(f"\nError in calculate_route: {result.get('error', {}).get('message', 'Unknown error')}")
         
         return result
     except Exception as e:
-        print(f"\n❌ Error in calculate_route: {str(e)}")
+        print(f"\nError in calculate_route: {str(e)}")
         return {"error": MCPToolErrorMessages.INVALID_COORDINATES.format(error=str(e))}
 
 @mcp.tool(name=MCPToolNames.GEOCODE_ADDRESS)
@@ -459,139 +479,98 @@ async def get_detailed_route_tool(
 ) -> dict:
     f"""{MCPToolDescriptions.GET_DETAILED_ROUTE}"""
     try:
-        # Sử dụng Get Detailed Route Use Case
-        request = DetailedRouteRequest(
-            origin_address=origin_address,
-            destination_address=destination_address,
-            travel_mode=TravelMode(travel_mode),
-            country_set=country_set,
-            language=language
-        )
-        
-        result = await _container.get_detailed_route.handle(request)
-        
-        # Log the result for debugging
-        print(MCPDetailedRouteLogMessages.SERVER_RESPONSE_HEADER)
-        print(MCPDetailedRouteLogMessages.DISTANCE_LOG.format(distance=result.summary.distance_m))
-        print(MCPDetailedRouteLogMessages.DURATION_LOG.format(duration=result.summary.duration_s))
-        print(MCPDetailedRouteLogMessages.GUIDANCE_INSTRUCTIONS_LOG.format(count=len(result.guidance.instructions)))
-        print(MCPDetailedRouteLogMessages.ROUTE_LEGS_LOG.format(count=len(result.legs)))
-        print(MCPDetailedRouteLogMessages.ORIGIN_LOG.format(address=result.origin.address))
-        print(MCPDetailedRouteLogMessages.DESTINATION_LOG.format(address=result.destination.address))
-        
-        # Show first few guidance instructions
-        if result.guidance.instructions:
-            print(MCPDetailedRouteLogMessages.GUIDANCE_HEADER)
-            for i, inst in enumerate(result.guidance.instructions[:3]):
-                print(MCPDetailedRouteLogMessages.GUIDANCE_STEP.format(step=i+1, instruction=inst.instruction))
-                print(MCPDetailedRouteLogMessages.GUIDANCE_DISTANCE_DURATION.format(distance=inst.distance_m, duration=inst.duration_s))
-                print(MCPDetailedRouteLogMessages.GUIDANCE_MANEUVER.format(maneuver=inst.maneuver))
-                if inst.road_name:
-                    print(MCPDetailedRouteLogMessages.GUIDANCE_ROAD.format(road_name=inst.road_name))
-                print(MCPDetailedRouteLogMessages.GUIDANCE_POINT.format(lat=inst.point.lat, lon=inst.point.lon))
-        
-        # Convert to dict format - chỉ trả về guidance instructions (chỉ dẫn theo tuyến đường)
-        response_dict = {
-            "summary": {
-                "distance_m": result.summary.distance_m,
-                "duration_s": result.summary.duration_s,
-                "traffic_delay_s": result.summary.traffic_delay_s,
-                "fuel_consumption_l": result.summary.fuel_consumption_l
-            },
-            "route_instructions": [
-                {
-                    "step": i + 1,
-                    "instruction": inst.instruction,
-                    "distance_m": inst.distance_m,
-                    "duration_s": inst.duration_s,
-                    "maneuver": inst.maneuver,
-                    "road_name": inst.road_name,
-                    "point": {
-                        "lat": inst.point.lat,
-                        "lon": inst.point.lon,
-                        "address": inst.point.address
-                    }
-                } for i, inst in enumerate(result.guidance.instructions)
-            ],
-            "waypoints": [
-                {
-                    "lat": wp.lat,
-                    "lon": wp.lon,
-                    "address": wp.address
-                } for wp in result.waypoints
-            ],
-            "origin": {
-                "lat": result.origin.lat,
-                "lon": result.origin.lon,
-                "address": result.origin.address
-            },
-            "destination": {
-                "lat": result.destination.lat,
-                "lon": result.destination.lon,
-                "address": result.destination.address
-            },
-            "traffic_sections": result.traffic_sections,
-            "route_legs": [
-                {
-                    "leg_number": i + 1,
-                    "start_point": {
-                        "lat": leg.start_point.lat,
-                        "lon": leg.start_point.lon,
-                        "address": leg.start_point.address
-                    },
-                    "end_point": {
-                        "lat": leg.end_point.lat,
-                        "lon": leg.end_point.lon,
-                        "address": leg.end_point.address
-                    },
-                    "distance_m": leg.distance_m,
-                    "duration_s": leg.duration_s
-                } for i, leg in enumerate(result.legs)
-            ],
-            "route_geometry": [
-                {
-                    "lat": point.lat,
-                    "lon": point.lon,
-                    "address": point.address
-                } for point in result.route_geometry
-            ] if result.route_geometry else None
+        # Sử dụng integrated flow service với 13 blocks
+        request_data = {
+            "jsonrpc": "2.0",
+            "id": f"req-{uuid.uuid4().hex[:8]}",
+            "method": "tools/call",
+            "params": {
+                "name": "get_detailed_route",
+                "arguments": {
+                    "origin_address": origin_address,
+                    "destination_address": destination_address,
+                    "travel_mode": travel_mode,
+                    "country_set": country_set,
+                    "language": language
+                }
+            }
         }
         
-        # Log the final response dict
-        print(MCPDetailedRouteLogMessages.FINAL_RESPONSE_HEADER)
-        print(MCPDetailedRouteLogMessages.SUMMARY_LOG.format(summary=response_dict['summary']))
-        print(MCPDetailedRouteLogMessages.ROUTE_INSTRUCTIONS_COUNT.format(count=len(response_dict['route_instructions'])))
-        print(MCPDetailedRouteLogMessages.ROUTE_LEGS_COUNT.format(count=len(response_dict['route_legs'])))
-        print(MCPDetailedRouteLogMessages.TRAFFIC_SECTIONS_COUNT.format(count=len(response_dict['traffic_sections'])))
+        # Process qua tất cả 13 blocks
+        result = await _route_traffic_service.process_route_traffic(request_data)
         
-        # Show first few route instructions
-        if response_dict['route_instructions']:
-            print(MCPDetailedRouteLogMessages.ROUTE_INSTRUCTIONS_HEADER)
-            for inst in response_dict['route_instructions'][:3]:
-                print(MCPDetailedRouteLogMessages.ROUTE_STEP.format(step=inst['step'], instruction=inst['instruction']))
-                print(MCPDetailedRouteLogMessages.ROUTE_DISTANCE_DURATION.format(distance=inst['distance_m'], duration=inst['duration_s']))
-                print(MCPDetailedRouteLogMessages.ROUTE_MANEUVER.format(maneuver=inst['maneuver']))
-                if inst['road_name']:
-                    print(MCPDetailedRouteLogMessages.ROUTE_ROAD.format(road_name=inst['road_name']))
+        # Log the result theo model mới
+        if "result" in result:
+            print(f"\nMCP Server Response for get_detailed_route:")
+            print(f"Request ID: {result['id']}")
+            
+            response_data = result['result']
+            
+            # 1. Tên điểm đến điểm đi
+            origin = response_data.get('origin', {})
+            destination = response_data.get('destination', {})
+            print(f"1. Điểm xuất phát: {origin.get('name', 'N/A')} - {origin.get('address', 'N/A')}")
+            print(f"   Điểm đến: {destination.get('name', 'N/A')} - {destination.get('address', 'N/A')}")
+            
+            # 2. Thời gian đi
+            travel_time = response_data.get('travel_time', {})
+            print(f"2. Thời gian đi: {travel_time.get('formatted', 'N/A')}")
+            if travel_time.get('departure_time'):
+                print(f"   Khởi hành: {travel_time.get('departure_time')}")
+            if travel_time.get('arrival_time'):
+                print(f"   Đến nơi: {travel_time.get('arrival_time')}")
+            
+            # 3. Cách di chuyển
+            travel_mode = response_data.get('travel_mode', {})
+            print(f"3. Cách di chuyển: {travel_mode.get('description', 'N/A')} ({travel_mode.get('mode', 'N/A')})")
+            
+            # 4. Hướng dẫn chi tiết (kèm trạng thái đường đi)
+            main_route = response_data.get('main_route', {})
+            if main_route:
+                print(f"4. Tuyến đường chính: {main_route.get('summary', 'N/A')}")
+                traffic = main_route.get('traffic_condition', {})
+                print(f"   Trạng thái giao thông: {traffic.get('description', 'N/A')} (chậm {traffic.get('delay_minutes', 0)} phút)")
+                
+                instructions = main_route.get('instructions', [])
+                if instructions:
+                    print("   Hướng dẫn chi tiết (3 bước đầu):")
+                    for inst in instructions[:3]:
+                        print(f"      {inst.get('step')}. {inst.get('instruction')} ({inst.get('distance_meters', 0)}m, {inst.get('duration_seconds', 0)}s)")
+                        if inst.get('traffic_condition'):
+                            traffic_inst = inst['traffic_condition']
+                            print(f"         Giao thông: {traffic_inst.get('description', 'N/A')}")
+            
+            # 5. Cách di chuyển khác (kèm trạng thái đường đi)
+            alt_routes = response_data.get('alternative_routes', [])
+            if alt_routes:
+                print(f"5. Tuyến đường thay thế ({len(alt_routes)} tuyến):")
+                for i, alt_route in enumerate(alt_routes, 1):
+                    print(f"   Tuyến {i}: {alt_route.get('summary', 'N/A')}")
+                    alt_traffic = alt_route.get('traffic_condition', {})
+                    print(f"      Trạng thái: {alt_traffic.get('description', 'N/A')} (chậm {alt_traffic.get('delay_minutes', 0)} phút)")
+                    print(f"      Khoảng cách: {alt_route.get('total_distance_meters', 0)}m")
+                    print(f"      Thời gian: {alt_route.get('total_duration_seconds', 0)}s")
+        else:
+            print(f"\nError in get_detailed_route: {result.get('error', {}).get('message', 'Unknown error')}")
         
-        return response_dict
+        return result
     except Exception as e:
-        print(MCPDetailedRouteLogMessages.ERROR_HEADER.format(error=str(e)))
+        print(f"\nException in get_detailed_route: {str(e)}")
         return {"error": MCPToolErrorMessages.GET_DETAILED_ROUTE_FAILED.format(error=str(e))}
 
 # Traffic recommendations đã được chuyển vào TrafficMapper trong ACL layer
         
 def main():
     """Start the TomTom MCP server với Clean Architecture."""
-    print("🚀 Starting TomTom Route MCP Server (Clean Architecture)...")
+    print("Starting TomTom Route MCP Server (Clean Architecture)...")
 
     try:
         # Lấy configuration từ config service
         config = _container.config_service.get_config()
         
         print(MCPSuccessMessages.API_KEY_CONFIGURED)
-        print("🏠 Architecture: Clean Architecture với Use Cases & Ports/Adapters")
-        print("🔌 Dependency Injection: Container pattern")
+        print("Architecture: Clean Architecture với Use Cases & Ports/Adapters")
+        print("Dependency Injection: Container pattern")
         
         # Tool count
         all_tools = (MCPServerConstants.ROUTING_TOOLS + 
@@ -600,7 +579,7 @@ def main():
                     MCPServerConstants.COMPOSITE_TOOLS +
                     MCPServerConstants.DESTINATION_TOOLS)
         
-        print(f"🛠️  Available tools ({len(all_tools)}):")
+        print(f"Available tools ({len(all_tools)}):")
         print(f"   • calculate_route - {MCPToolDescriptions.CALCULATE_ROUTE}")
         print(f"   • geocode_address - {MCPToolDescriptions.GEOCODE_ADDRESS}")
         print(f"   • get_intersection_position - {MCPToolDescriptions.GET_INTERSECTION_POSITION}")
@@ -616,8 +595,8 @@ def main():
         print(f"   • delete_destination - {MCPToolDescriptions.DELETE_DESTINATION}")
         print(f"   • update_destination - {MCPToolDescriptions.UPDATE_DESTINATION}")
         print("=" * 60)
-        print(f"🌐 Transport: {MCPServerConstants.DEFAULT_TRANSPORT}")
-        print(f"📡 Endpoint: http://{config.server_host}:{config.server_port}")
+        print(f"Transport: {MCPServerConstants.DEFAULT_TRANSPORT}")
+        print(f"Endpoint: http://{config.server_host}:{config.server_port}")
         print("=" * 60)
 
         # Run the FastMCP server with HTTP Streamable transport
