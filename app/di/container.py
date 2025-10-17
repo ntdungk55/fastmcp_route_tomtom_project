@@ -10,6 +10,7 @@ from app.application.use_cases.calculate_route import CalculateRoute
 from app.application.use_cases.check_address_traffic import CheckAddressTraffic
 from app.application.use_cases.delete_destination import DeleteDestinationUseCase
 from app.application.use_cases.geocode_address import GeocodeAddress
+from app.application.use_cases.get_detailed_route import GetDetailedRouteUseCase
 from app.application.use_cases.get_intersection_position import GetIntersectionPosition
 from app.application.use_cases.get_street_center import GetStreetCenter
 from app.application.use_cases.get_traffic_condition import GetTrafficCondition
@@ -137,4 +138,11 @@ class Container:
         self.update_destination = UpdateDestinationUseCase(
             destination_repository=self.destination_repository,
             geocoding_provider=self.geocoding_adapter
+        )
+        
+        # Detailed Route Use Case (composite use case)
+        self.get_detailed_route = GetDetailedRouteUseCase(
+            destination_repository=self.destination_repository,
+            geocoding_provider=self.geocoding_adapter,
+            routing_provider=self.routing_adapter
         )

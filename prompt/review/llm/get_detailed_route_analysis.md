@@ -1,121 +1,137 @@
-# Feature Analysis Report: get_detailed_route Tool
+# Báo Cáo Phân Tích Tính Năng: Tool get_detailed_route
 
-**Generated:** 2025-10-17  
-**Status:** 🔄 READY FOR PHASE 2 EXECUTION
-
----
-
-## 1. Executive Summary
-
-The `get_detailed_route` tool has been cleaned up from the codebase (all 14 services, use case, DTOs removed). This report analyzes the requirements and recommends a fresh implementation following the Clean Architecture v5 pattern.
-
-**Recommendation:** ✅ **PROCEED WITH ADD**
+**Tạo:** 2025-10-17  
+**Trạng Thái:** 🔄 SẴN SÀNG CHO GIAI ĐOẠN 2 THỰC HIỆN
 
 ---
 
-## 2. Feature Overview
+## 1. Tóm Tắt Điều Hành
 
-### 2.1 Current Status
-- **Diagram:** ❌ NOT FOUND in `prompt/specs/diagrams/`
-- **Blocks:** 0 files (all removed)
-- **Code:** ❌ REMOVED
-- **DTOs:** ❌ REMOVED (deleted `detailed_route_dto.py`, `detailed_route_response_dto.py`)
-- **Use Case:** ❌ REMOVED (deleted `get_detailed_route.py`)
+Tool `get_detailed_route` đã được dọn dẹp khỏi codebase (tất cả 14 services, use case, DTOs đã bị xóa). Báo cáo này phân tích các yêu cầu và khuyến nghị thực hiện lại theo mô hình Clean Architecture v5.
 
-### 2.2 Tool Purpose
-Calculate a detailed route between two addresses:
-- Accept two addresses (origin, destination)
-- Use saved destinations from database if available
-- Geocode addresses if not found in database
-- Return detailed route with:
-  - Turn-by-turn instructions
-  - Traffic information per segment
-  - Alternative routes
-  - Time estimates
-
-### 2.3 Architecture Type
-**Composite Use Case** - Requires multiple adapters:
-- `GeocodingProvider` (from geocoding_adapter)
-- `RoutingProvider` (from routing_adapter)
-- `DestinationRepository` (from SQLite repository)
+**Khuyến Nghị:** ✅ **TIẾP TỤC VỚI THÊM MỚI**
 
 ---
 
-## 3. Dependencies & Integration Points
+## 2. Tổng Quan Tính Năng
 
-### 3.1 Required Adapters
-- ✅ **TomTomGeocodingAdapter** - Already exists in `infrastructure/tomtom/adapters/geocoding_adapter.py`
-- ✅ **TomTomRoutingAdapter** - Already exists in `infrastructure/tomtom/adapters/routing_adapter.py`
-- ✅ **SQLiteDestinationRepository** - Already exists in `infrastructure/persistence/repositories/sqlite_destination_repository.py`
+### 2.1 Trạng Thái Hiện Tại
+- **Diagram:** ✅ CÓ SẴN tại `prompt/specs/diagrams/routing mcp server diagram.drawio`
+- **Blocks:** ✅ ĐỦ 14 files (tất cả block descriptions đã tạo)
+- **Code:** ❌ ĐÃ XÓA (cần generate lại)
+- **DTOs:** ❌ ĐÃ XÓA (cần generate lại)
+- **Use Case:** ❌ ĐÃ XÓA (cần generate lại)
 
-### 3.2 Similar Use Cases to Reference
-- ✅ **SaveDestinationUseCase** - Composite, uses geocoding_adapter + destination_repository
-  - Location: `app/application/use_cases/save_destination.py`
-  - Pattern: Multiple adapters injected via constructor
+**14 Block Descriptions Có Sẵn:**
+1. ✅ BLK-1-00-ListenMCPRequest.md - Lắng nghe request MCP
+2. ✅ BLK-1-01-Valid Input Param.md - Validate tham số input
+3. ✅ BLK-1-02-CheckError.md - Kiểm tra lỗi validation
+4. ✅ BLK-1-03-MapValidationErrorsToUserMessages.md - Map lỗi sang user messages
+5. ✅ BLK-1-04-CheckDestinationExists.md - Kiểm tra destination trong database
+6. ✅ BLK-1-05-ClassifyErrorType.md - Phân loại loại lỗi
+7. ✅ BLK-1-06-HandleSystemError.md - Xử lý lỗi hệ thống
+8. ✅ BLK-1-07-SaveRequestHistory.md - Lưu lịch sử request
+9. ✅ BLK-1-08-SaveDestination.md - Lưu destination mới
+10. ✅ BLK-1-09-RequestRoutingAPI.md - Gọi API TomTom để tính tuyến
+11. ✅ BLK-1-10-CheckAPISuccess.md - Kiểm tra API response thành công
+12. ✅ BLK-1-11-ClassifyAndFormatErrorOutput.md - Format error output
+13. ✅ BLK-1-12-TransformSuccessDataForAI.md - Transform data cho AI
+14. ✅ BLK-1-13-UpdateRequestResult.md - Cập nhật kết quả request
 
-- ✅ **CheckAddressTraffic** - Composite, uses geocoding_adapter + traffic_adapter
-  - Location: `app/application/use_cases/check_address_traffic.py`
-  - Pattern: Multiple adapters + orchestration
+### 2.2 Mục Đích Tool
+Tính toán tuyến đường chi tiết giữa hai địa chỉ:
+- Chấp nhận hai địa chỉ (điểm xuất phát, điểm đến)
+- Sử dụng các địa chỉ đã lưu từ cơ sở dữ liệu nếu có sẵn
+- Geocode các địa chỉ nếu không tìm thấy trong cơ sở dữ liệu
+- Trả về tuyến đường chi tiết với:
+  - Hướng dẫn từng bước (turn-by-turn)
+  - Thông tin giao thông cho mỗi đoạn
+  - Các tuyến đường thay thế
+  - Ước tính thời gian
 
-### 3.3 Existing Ports to Extend
-- `DestinationRepository` port exists
-- `GeocodingProvider` port exists  
-- `RoutingProvider` port exists
+### 2.3 Loại Kiến Trúc
+**Use Case Composite** - Yêu cầu nhiều adapter:
+- `GeocodingProvider` (từ geocoding_adapter)
+- `RoutingProvider` (từ routing_adapter)
+- `DestinationRepository` (từ SQLite repository)
 
 ---
 
-## 4. Implementation Plan
+## 3. Các Phụ Thuộc & Điểm Tích Hợp
 
-### 4.1 Layer-by-Layer Structure
+### 3.1 Adapter Cần Thiết
+- ✅ **TomTomGeocodingAdapter** - Đã tồn tại tại `infrastructure/tomtom/adapters/geocoding_adapter.py`
+- ✅ **TomTomRoutingAdapter** - Đã tồn tại tại `infrastructure/tomtom/adapters/routing_adapter.py`
+- ✅ **SQLiteDestinationRepository** - Đã tồn tại tại `infrastructure/persistence/repositories/sqlite_destination_repository.py`
 
-#### **Layer 1: Domain (No Changes)**
-- ✅ Use existing `LatLon` value object
-- ✅ Use existing `TravelMode` enum
-- ✅ No new domain entities needed
+### 3.2 Các Use Case Tương Tự để Tham Khảo
+- ✅ **SaveDestinationUseCase** - Composite, sử dụng geocoding_adapter + destination_repository
+  - Vị trí: `app/application/use_cases/save_destination.py`
+  - Mô hình: Nhiều adapter được inject qua constructor
 
-#### **Layer 2: Application**
-**New Files to Create:**
+- ✅ **CheckAddressTraffic** - Composite, sử dụng geocoding_adapter + traffic_adapter
+  - Vị trí: `app/application/use_cases/check_address_traffic.py`
+  - Mô hình: Nhiều adapter + orchestration
 
-1. **DTO Layer:**
+### 3.3 Các Port Hiện Tại để Mở Rộng
+- Port `DestinationRepository` đã tồn tại
+- Port `GeocodingProvider` đã tồn tại  
+- Port `RoutingProvider` đã tồn tại
+
+---
+
+## 4. Kế Hoạch Thực Hiện
+
+### 4.1 Cấu Trúc Theo Từng Tầng
+
+#### **Tầng 1: Domain (Không Cần Thay Đổi)**
+- ✅ Sử dụng value object `LatLon` hiện tại
+- ✅ Sử dụng enum `TravelMode` hiện tại
+- ✅ Không cần entity domain mới
+
+#### **Tầng 2: Application**
+**Các File Cần Tạo:**
+
+1. **Tầng DTO:**
    - `app/application/dto/detailed_route_dto.py`
-     - Request: `DetailedRouteRequest` with origin_address, dest_address, travel_mode, etc.
-     - Response: `DetailedRouteResponse` with origin, destination, main_route, alternative_routes, etc.
-     - Supporting types: `RoutePoint`, `RouteInstruction`, `RouteLeg`, `TrafficSection`, `GuidanceInfo`
+     - Request: `DetailedRouteRequest` với origin_address, dest_address, travel_mode, vv.
+     - Response: `DetailedRouteResponse` với origin, destination, main_route, alternative_routes, vv.
+     - Các loại hỗ trợ: `RoutePoint`, `RouteInstruction`, `RouteLeg`, `TrafficSection`, `GuidanceInfo`
 
-2. **Use Case Layer:**
+2. **Tầng Use Case:**
    - `app/application/use_cases/get_detailed_route.py`
      - Class: `GetDetailedRouteUseCase`
      - Constructor: inject DestinationRepository, GeocodingProvider, RoutingProvider
      - Method: `execute(request: DetailedRouteRequest) → DetailedRouteResponse`
      - Logic:
-       1. Check if origin_address exists in database
-       2. If not, geocode origin_address
-       3. Check if destination_address exists in database
-       4. If not, geocode destination_address
-       5. Calculate route using routing_provider
-       6. Get guidance/instructions from routing_provider
-       7. Build DetailedRouteResponse
-       8. Return response
+       1. Kiểm tra nếu origin_address tồn tại trong cơ sở dữ liệu
+       2. Nếu không, geocode origin_address
+       3. Kiểm tra nếu destination_address tồn tại trong cơ sở dữ liệu
+       4. Nếu không, geocode destination_address
+       5. Tính toán tuyến đường sử dụng routing_provider
+       6. Lấy guidance/instructions từ routing_provider
+       7. Xây dựng DetailedRouteResponse
+       8. Trả về response
 
-#### **Layer 3: Infrastructure**
-- ✅ Already has all adapters needed
-- ✅ No new infrastructure files needed
+#### **Tầng 3: Infrastructure**
+- ✅ Đã có tất cả adapter cần thiết
+- ✅ Không cần file infrastructure mới
 
-#### **Layer 4: Interfaces (MCP)**
-**New File to Update:**
+#### **Tầng 4: Interfaces (MCP)**
+**File Cần Cập Nhật:**
 
 1. **`app/interfaces/mcp/server.py`**
-   - Add: `get_detailed_route_tool` function
+   - Thêm: function `get_detailed_route_tool`
    - Decorator: `@mcp.tool(name=MCPToolNames.GET_DETAILED_ROUTE)`
    - Parameters: origin_address, destination_address, travel_mode, country_set, language
-   - Call: `await _container.get_detailed_route.execute(request)`
-   - Return: DetailedRouteResponse as dict
+   - Gọi: `await _container.get_detailed_route.execute(request)`
+   - Trả về: DetailedRouteResponse dưới dạng dict
 
-#### **Layer 5: DI Container**
-**Update: `app/di/container.py`**
+#### **Tầng 5: DI Container**
+**Cập Nhật: `app/di/container.py`**
 
 1. Import: `from app.application.use_cases.get_detailed_route import GetDetailedRouteUseCase`
-2. In `_init_use_cases()` method:
+2. Trong method `_init_use_cases()`:
    ```python
    # Detailed Route Use Case (composite use case)
    self.get_detailed_route = GetDetailedRouteUseCase(
@@ -127,10 +143,10 @@ Calculate a detailed route between two addresses:
 
 ---
 
-## 5. Reference Implementation Pattern
+## 5. Mô Hình Tham Khảo Thực Hiện
 
-### 5.1 Example: CheckAddressTraffic (Composite Use Case)
-Location: `app/application/use_cases/check_address_traffic.py`
+### 5.1 Ví Dụ: CheckAddressTraffic (Composite Use Case)
+Vị trí: `app/application/use_cases/check_address_traffic.py`
 
 ```python
 class CheckAddressTraffic:
@@ -139,16 +155,16 @@ class CheckAddressTraffic:
         self._traffic = traffic
     
     async def handle(self, cmd: AddressTrafficCommandDTO) -> TrafficAnalysisResponse:
-        # Geocode origin address
+        # Geocode địa chỉ xuất phát
         origin_geocode = await self._geocoding.geocode_address(...)
-        # Get traffic for origin
+        # Lấy thông tin giao thông cho điểm xuất phát
         traffic_data = await self._traffic.get_traffic(...)
-        # Return combined response
+        # Trả về response kết hợp
         return TrafficAnalysisResponse(...)
 ```
 
-### 5.2 Example: SaveDestinationUseCase (Multi-Adapter)
-Location: `app/application/use_cases/save_destination.py`
+### 5.2 Ví Dụ: SaveDestinationUseCase (Multi-Adapter)
+Vị trí: `app/application/use_cases/save_destination.py`
 
 ```python
 class SaveDestinationUseCase:
@@ -158,17 +174,17 @@ class SaveDestinationUseCase:
         self._geocoding = geocoding_provider
     
     async def execute(self, request: SaveDestinationRequest) -> SaveDestinationResponse:
-        # Geocode address
+        # Geocode địa chỉ
         geocoding_result = await self._geocoding.geocode_address(...)
-        # Save to repository
+        # Lưu vào repository
         destination = await self._repository.save(...)
-        # Return response
+        # Trả về response
         return SaveDestinationResponse(...)
 ```
 
 ---
 
-## 6. DTO Requirements
+## 6. Yêu Cầu DTO
 
 ### 6.1 Input DTO: DetailedRouteRequest
 ```json
@@ -186,13 +202,13 @@ class SaveDestinationUseCase:
 {
   "origin": {
     "address": "string",
-    "name": "string (from database if saved)",
+    "name": "string (từ database nếu đã lưu)",
     "lat": number,
     "lon": number
   },
   "destination": {
     "address": "string",
-    "name": "string (from database if saved)",
+    "name": "string (từ database nếu đã lưu)",
     "lat": number,
     "lon": number
   },
@@ -232,9 +248,9 @@ class SaveDestinationUseCase:
 
 ---
 
-## 7. MCP Tool Definition
+## 7. Định Nghĩa Tool MCP
 
-### 7.1 Tool Signature
+### 7.1 Chữ Ký Tool
 ```python
 @mcp.tool(name="get_detailed_route")
 async def get_detailed_route_tool(
@@ -244,67 +260,67 @@ async def get_detailed_route_tool(
     country_set: str = "VN",
     language: str = "vi-VN"
 ) -> dict:
-    """Calculate detailed route between two addresses with traffic info."""
+    """Tính toán tuyến đường chi tiết giữa hai địa chỉ với thông tin giao thông."""
 ```
 
-### 7.2 Tool Parameters
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| origin_address | string | ✅ | - | Starting address |
-| destination_address | string | ✅ | - | Destination address |
-| travel_mode | string | ❌ | "car" | Travel mode: car, bicycle, foot |
-| country_set | string | ❌ | "VN" | Country code |
-| language | string | ❌ | "vi-VN" | Response language |
+### 7.2 Các Tham Số Tool
+| Tham Số | Loại | Bắt Buộc | Mặc Định | Mô Tả |
+|---------|------|----------|----------|-------|
+| origin_address | string | ✅ | - | Địa chỉ điểm xuất phát |
+| destination_address | string | ✅ | - | Địa chỉ điểm đến |
+| travel_mode | string | ❌ | "car" | Phương tiện: car, bicycle, foot |
+| country_set | string | ❌ | "VN" | Mã quốc gia |
+| language | string | ❌ | "vi-VN" | Ngôn ngữ response |
 
 ---
 
-## 8. Known Issues & Considerations
+## 8. Các Vấn Đề Đã Biết & Cân Nhắc
 
-### 8.1 Edge Cases
-- ✅ Address not found in database → fallback to geocoding
-- ✅ Geocoding returns no results → error handling needed
-- ✅ Routing API returns no route → error handling needed
-- ✅ Multiple saved destinations with same address → use first match
+### 8.1 Trường Hợp Edge
+- ✅ Địa chỉ không tìm thấy trong database → fallback sang geocoding
+- ✅ Geocoding không trả về kết quả → cần xử lý lỗi
+- ✅ Routing API không trả về tuyến đường → cần xử lý lỗi
+- ✅ Nhiều địa chỉ lưu với cùng địa chỉ → sử dụng kết quả đầu tiên
 
-### 8.2 Error Scenarios
-- Geocoding failure → return error response
-- Routing API failure → return error response
-- No route found → return error response
-- Invalid coordinates → validation error
-
----
-
-## 9. Next Steps (Phase 2 Execution)
-
-### 9.1 Block Design Phase
-1. ✅ **User Review** - Developer approves this analysis
-2. Create detailed block descriptions in `prompt/specs/diagrams/blocks/`
-3. Wait for user approval on blocks
-
-### 9.2 Code Generation Phase
-1. Generate DTOs
-2. Generate Use Case
-3. Update DI Container
-4. Update MCP Server
-5. Add to MCP Tool list
-6. Test implementation
+### 8.2 Các Kịch Bản Lỗi
+- Geocoding thất bại → trả về error response
+- Routing API thất bại → trả về error response
+- Không tìm thấy tuyến đường → trả về error response
+- Tọa độ không hợp lệ → validation error
 
 ---
 
-## 10. Summary
+## 9. Các Bước Tiếp Theo (Giai Đoạn 2 Thực Hiện)
 
-| Item | Status | Notes |
-|------|--------|-------|
-| **Diagram** | ❌ Not required | Already has routing diagram |
-| **Blocks** | ⏳ Ready to create | Will follow 14-block pattern |
-| **Code** | ⏳ Ready to generate | Follow existing patterns |
-| **DTOs** | ⏳ Ready to create | Request/Response defined |
-| **Use Case** | ⏳ Ready to generate | Composite pattern |
-| **DI Setup** | ⏳ Ready to wire | Simple constructor injection |
-| **MCP Tool** | ⏳ Ready to add | Parameters defined |
+### 9.1 Giai Đoạn Thiết Kế Block
+1. ✅ **Review của User** - Developer phê duyệt phân tích này
+2. Tạo mô tả block chi tiết trong `prompt/specs/diagrams/blocks/`
+3. Chờ phê duyệt block của user
+
+### 9.2 Giai Đoạn Tạo Code
+1. Tạo DTOs
+2. Tạo Use Case
+3. Cập nhật DI Container
+4. Cập nhật MCP Server
+5. Thêm vào danh sách MCP Tool
+6. Kiểm thử thực hiện
 
 ---
 
-**Recommendation:** ✅ **PROCEED TO PHASE 2 - BLOCK DESIGN**
+## 10. Tóm Tắt
 
-User should review this analysis and approve before proceeding with block creation.
+| Mục | Trạng Thái | Ghi Chú |
+|-----|-----------|--------|
+| **Diagram** | ✅ Có sẵn | File: routing mcp server diagram.drawio |
+| **Blocks** | ✅ Đầy đủ 14 files | Tất cả block descriptions đã tạo |
+| **Code** | ❌ Cần generate | DTOs, Use Case, MCP tool |
+| **DTOs** | ❌ Cần tạo | detailed_route_dto.py |
+| **Use Case** | ❌ Cần tạo | get_detailed_route.py |
+| **DI Setup** | ⏳ Cần wire | Container wiring simple |
+| **MCP Tool** | ⏳ Cần thêm | Sử dụng blocks hiện tại |
+
+---
+
+**Khuyến Nghị:** ✅ **TIẾP TỤC GIAI ĐOẠN 2 - GENERATE CODE (SKIP BLOCK DESIGN)**
+
+Vì blocks đã sẵn → có thể gen code luôn mà không cần tạo blocks mới.

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """TomTom MCP Server với Clean Architecture.
 
 Server này đã được refactor để tuân thủ Clean Architecture:
@@ -29,6 +30,7 @@ from app.domain.value_objects.latlon import LatLon
 
 # Application DTOs
 from app.application.dto.calculate_route_dto import CalculateRouteCommand
+from app.application.dto.detailed_route_dto import DetailedRouteRequest
 from app.application.dto.geocoding_dto import (
     GeocodeAddressCommandDTO,
     StructuredGeocodeCommandDTO,
@@ -314,7 +316,7 @@ async def save_destination_tool(
         # Log verification status
         if result.success:
             print(f"\n[SUCCESS] Save Destination Success: {result.message}")
-            print(f"📊 Destination ID: {result.destination_id}")
+            print(f"[ID] Destination ID: {result.destination_id}")
         else:
             print(f"\n[ERROR] Save Destination Failed: {result.error}")
         
@@ -402,7 +404,7 @@ async def update_destination_tool(
         # Log verification status
         if result.success:
             print(f"\n[SUCCESS] Update Destination Success: {result.message}")
-            print(f"📊 Destination ID: {result.destination_id}")
+            print(f"[ID] Destination ID: {result.destination_id}")
         else:
             print(f"\n[ERROR] Update Destination Failed: {result.error}")
         
@@ -410,6 +412,48 @@ async def update_destination_tool(
         return asdict(result)
     except Exception as e:
         return {"error": MCPToolErrorMessages.UPDATE_DESTINATION_FAILED.format(error=str(e))}
+
+@mcp.tool(name=MCPToolNames.GET_DETAILED_ROUTE)
+async def get_detailed_route_tool(
+    origin_address: str,
+    destination_address: str,
+    travel_mode: TravelModeLiteral = TravelModeConstants.CAR,
+    country_set: str = CountryConstants.DEFAULT,
+    language: str = LanguageConstants.DEFAULT
+) -> dict:
+    f"""{MCPToolDescriptions.GET_DETAILED_ROUTE}"""
+    try:
+        # Sử dụng Get Detailed Route Use Case
+        request = DetailedRouteRequest(
+            origin_address=origin_address,
+            destination_address=destination_address,
+            travel_mode=travel_mode,
+            country_set=country_set,
+            language=language
+        )
+        
+        result = await _container.get_detailed_route.execute(request)
+        
+        # Log the result
+        print(f"\n[ROUTE] Detailed Route: {origin_address} -> {destination_address}")
+        print(f"[TRAVEL] Travel Mode: {result.travel_mode}")
+        print(f"[DISTANCE] Distance: {result.main_route.total_distance_meters}m")
+        print(f"[DURATION] Duration: {result.main_route.total_duration_seconds}s")
+        print(f"[TRAFFIC] Traffic: {result.main_route.traffic_condition.description if result.main_route.traffic_condition else 'N/A'}")
+        
+        if result.main_route.instructions:
+            print(f"[INSTRUCTIONS] Instructions ({len(result.main_route.instructions)} steps):")
+            for instr in result.main_route.instructions[:3]:  # Show first 3 steps
+                print(f"   Step {instr.step}: {instr.instruction} ({instr.distance_meters}m, {instr.duration_seconds}s)")
+        
+        if result.alternative_routes:
+            print(f"[ALTERNATIVES] Alternative Routes: {len(result.alternative_routes)}")
+        
+        # Trả về response dưới dạng dict
+        return asdict(result)
+    except Exception as e:
+        print(f"\n❌ Error in get_detailed_route: {str(e)}")
+        return {"error": MCPToolErrorMessages.GET_DETAILED_ROUTE_FAILED.format(error=str(e))}
 
 # Traffic recommendations đã được chuyển vào TrafficMapper trong ACL layer
         
@@ -441,6 +485,7 @@ def main():
         print(f"   • get_via_route - {MCPToolDescriptions.GET_VIA_ROUTE}")
         print(f"   • analyze_route_traffic - {MCPToolDescriptions.ANALYZE_ROUTE_TRAFFIC}")
         print(f"   • check_traffic_between_addresses - {MCPToolDescriptions.CHECK_TRAFFIC_BETWEEN_ADDRESSES}")
+        print(f"   • get_detailed_route - {MCPToolDescriptions.GET_DETAILED_ROUTE}")
         print(f"   • save_destination - {MCPToolDescriptions.SAVE_DESTINATION}")
         print(f"   • list_destinations - {MCPToolDescriptions.LIST_DESTINATIONS}")
         print(f"   • delete_destination - {MCPToolDescriptions.DELETE_DESTINATION}")
