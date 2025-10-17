@@ -7,6 +7,7 @@ from app.application.dto.update_destination_dto import UpdateDestinationRequest,
 from app.application.dto.geocoding_dto import GeocodeAddressCommandDTO
 from app.application.ports.destination_repository import DestinationRepository
 from app.application.ports.geocoding_provider import GeocodingProvider
+from app.domain.entities.destination import Destination
 from app.domain.value_objects.latlon import LatLon
 from app.domain.value_objects.destination_name import DestinationName
 from app.domain.value_objects.address import Address
@@ -75,12 +76,15 @@ class UpdateDestinationUseCase:
                     )
                 new_name = DestinationName(request.name.strip())
             
-            # Create updated destination
-            updated_destination = existing_destination
-            updated_destination.name = new_name
-            updated_destination.address = new_address
-            updated_destination.coordinates = new_coordinates
-            updated_destination.updated_at = datetime.now(timezone.utc)
+            # Create updated destination (immutable pattern - do NOT mutate existing)
+            updated_destination = Destination(
+                id=existing_destination.id,
+                name=new_name,
+                address=new_address,
+                coordinates=new_coordinates,
+                created_at=existing_destination.created_at,
+                updated_at=datetime.now(timezone.utc)
+            )
             
             # Save updated destination
             saved_destination = await self._destination_repository.save(updated_destination)

@@ -32,8 +32,8 @@ class SearchDestinationsUseCase:
             destination_summaries = [
                 DestinationSummary(
                     id=dest.id or "",
-                    name=dest.name.value,
-                    address=dest.address.value,
+                    name=str(dest.name),
+                    address=str(dest.address),
                     latitude=dest.coordinates.lat,
                     longitude=dest.coordinates.lon,
                     created_at=dest.created_at.isoformat(),

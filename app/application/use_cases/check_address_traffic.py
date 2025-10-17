@@ -14,7 +14,7 @@ class CheckAddressTraffic:
         self._geocoding = geocoding
         self._traffic = traffic
     
-    async def handle(self, cmd: AddressTrafficCommandDTO) -> AddressTrafficResultDTO:
+    async def execute(self, cmd: AddressTrafficCommandDTO) -> AddressTrafficResultDTO:
         """Handle address-to-address traffic check."""
         # Step 1: Geocode both addresses
         from app.application.constants.validation_constants import DefaultValues

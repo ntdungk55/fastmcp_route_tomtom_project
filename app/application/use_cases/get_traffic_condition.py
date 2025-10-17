@@ -10,6 +10,6 @@ class GetTrafficCondition:
     def __init__(self, traffic: TrafficProvider):
         self._traffic = traffic
     
-    async def handle(self, cmd: TrafficConditionCommandDTO) -> TrafficConditionResultDTO:
+    async def execute(self, cmd: TrafficConditionCommandDTO) -> TrafficConditionResultDTO:
         """Handle traffic condition query."""
         return await self._traffic.get_traffic_condition(cmd)

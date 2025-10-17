@@ -10,6 +10,6 @@ class GeocodeAddress:
     def __init__(self, geocoding: GeocodingProvider):
         self._geocoding = geocoding
     
-    async def handle(self, cmd: GeocodeAddressCommandDTO) -> GeocodeResponseDTO:
+    async def execute(self, cmd: GeocodeAddressCommandDTO) -> GeocodeResponseDTO:
         """Handle geocoding address command."""
         return await self._geocoding.geocode_address(cmd)

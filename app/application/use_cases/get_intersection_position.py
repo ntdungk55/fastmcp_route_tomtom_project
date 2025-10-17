@@ -10,6 +10,6 @@ class GetIntersectionPosition:
     def __init__(self, geocoding: GeocodingProvider):
         self._geocoding = geocoding
     
-    async def handle(self, cmd: StructuredGeocodeCommandDTO) -> GeocodeResponseDTO:
+    async def execute(self, cmd: StructuredGeocodeCommandDTO) -> GeocodeResponseDTO:
         """Handle structured geocoding command for intersections."""
         return await self._geocoding.structured_geocode(cmd)

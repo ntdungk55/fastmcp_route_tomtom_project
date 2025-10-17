@@ -11,7 +11,7 @@ class GetStreetCenter:
     def __init__(self, geocoding: GeocodingProvider):
         self._geocoding = geocoding
     
-    async def handle(
+    async def execute(
         self, 
         street_name: str, 
         country_set: str = CountryConstants.DEFAULT,
