@@ -1,6 +1,9 @@
 """TomTom Routing ACL Mapper - Chuyển đổi dữ liệu routing cơ bản."""
 
 from app.application.dto.calculate_route_dto import RoutePlan, RouteSection, RouteSummary, RouteGuidance, RouteInstruction
+from app.infrastructure.logging.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class TomTomMapper:
@@ -19,6 +22,7 @@ class TomTomMapper:
         routes = payload.get("routes", [])
         if not routes:
             # Trả về RoutePlan rỗng nếu không có route
+            logger.warning("No routes found in TomTom response")
             return RoutePlan(summary=RouteSummary(0, 0), sections=[], guidance=RouteGuidance(instructions=[]))
         # Lấy route đầu tiên (tốt nhất)
         r0 = routes[0]
@@ -43,7 +47,12 @@ class TomTomMapper:
 
         # Trích xuất guidance và instructions
         guidance_data = r0.get("guidance", {})
+        logger.info(f"DEBUG: guidance_data keys = {list(guidance_data.keys())}")
+        logger.info(f"DEBUG: full guidance_data = {guidance_data}")
+        
         instructions_data = guidance_data.get("instructions", [])
+        logger.info(f"DEBUG: Found {len(instructions_data)} instructions")
+        
         instructions: list[RouteInstruction] = []
         
         for idx, inst in enumerate(instructions_data, 1):
