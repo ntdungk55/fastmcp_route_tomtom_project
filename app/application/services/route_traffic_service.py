@@ -76,6 +76,11 @@ class RouteTrafficService:
         self._destination_saver_service = get_destination_saver_service()
         self._api_response_handler_service = get_api_response_handler_service()
         self._request_result_updater_service = get_request_result_updater_service()
+        self._destination_repository = None  # Will be injected if needed
+    
+    def set_destination_repository(self, repository):
+        """Inject destination repository (for BLK-1-04)."""
+        self._destination_repository = repository
     
     async def process_route_traffic(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -400,15 +405,127 @@ class RouteTrafficService:
         }
     
     async def _blk_1_04_check_destination_exists(self, validation_result: ValidationResult, context: RequestContext) -> Dict[str, Any]:
-        """BLK-1-04: Check if destination exists in database."""
+        """
+        BLK-1-04: Check if destination exists in database with retry logic.
+        
+        Queries destination repository by address or coordinates.
+        If found, returns cached destination data to potentially skip geocoding.
+        Implements retry logic: 2 retries with 50ms backoff on DB timeout.
+        """
         self._logger.debug(f"BLK-1-04: Checking destination exists for request {context.request_id}")
         
-        # For now, return not exists to proceed with API call
-        # In full implementation, this would check the database
-        return {
-            "destination_exists": False,
-            "destination_data": None
-        }
+        # If no repository injected, skip check
+        if not self._destination_repository:
+            self._logger.debug("BLK-1-04: No destination repository available, skipping destination check")
+            return {
+                "destination_exists": False,
+                "destination_data": None
+            }
+        
+        try:
+            # Extract destination info from validated data
+            validated_data = validation_result.validated_data or {}
+            destination_address = validated_data.get("destination_address")
+            destination_coords = validated_data.get("destination_coordinates")
+            
+            if not destination_address and not destination_coords:
+                self._logger.debug("BLK-1-04: No destination address or coordinates provided")
+                return {
+                    "destination_exists": False,
+                    "destination_data": None
+                }
+            
+            # Try to find destination with retry logic
+            destination = await self._find_destination_with_retry(
+                address=destination_address,
+                coordinates=destination_coords,
+                request_id=context.request_id
+            )
+            
+            if destination:
+                self._logger.info(
+                    f"BLK-1-04: Destination found in cache (id={destination.id}, "
+                    f"address={destination.address})"
+                )
+                return {
+                    "destination_exists": True,
+                    "destination_id": destination.id,
+                    "destination_data": {
+                        "id": destination.id,
+                        "name": str(destination.name),
+                        "address": str(destination.address),
+                        "coordinates": {
+                            "lat": destination.coordinates.lat,
+                            "lon": destination.coordinates.lon
+                        },
+                        "created_at": destination.created_at.isoformat(),
+                        "updated_at": destination.updated_at.isoformat()
+                    }
+                }
+            else:
+                self._logger.debug(f"BLK-1-04: Destination not found in cache for request {context.request_id}")
+                return {
+                    "destination_exists": False,
+                    "destination_data": None
+                }
+                
+        except Exception as e:
+            self._logger.warning(
+                f"BLK-1-04: Error checking destination exists for request {context.request_id}: {e}. "
+                "Proceeding without cache."
+            )
+            # Fail-open: continue without cache if error
+            return {
+                "destination_exists": False,
+                "destination_data": None
+            }
+    
+    async def _find_destination_with_retry(self, address: str = None, coordinates: Dict = None, 
+                                          request_id: str = None, max_retries: int = 2) -> Optional[Dict[str, Any]]:
+        """
+        Find destination with retry logic: 2 retries with 50ms backoff on timeout.
+        
+        Tries to find by address first, then by coordinates if address search fails.
+        """
+        backoff_ms = 50
+        for attempt in range(max_retries + 1):
+            try:
+                # Try to search by address first
+                if address:
+                    results = await asyncio.wait_for(
+                        self._destination_repository.search_by_name_and_address(address=address),
+                        timeout=0.1  # 100ms timeout per query
+                    )
+                    if results and len(results) > 0:
+                        return results[0]  # Return first match
+                
+                # Try to search by coordinates if address search failed or address not provided
+                if coordinates and "lat" in coordinates and "lon" in coordinates:
+                    # For coordinate-based search, we'd need geospatial query
+                    # For now, return first result or None
+                    pass
+                
+                return None
+                
+            except asyncio.TimeoutError:
+                if attempt < max_retries:
+                    wait_time = (backoff_ms * (attempt + 1)) / 1000.0  # Convert to seconds
+                    self._logger.debug(
+                        f"BLK-1-04: DB query timeout on attempt {attempt + 1}, "
+                        f"retrying in {wait_time*1000:.0f}ms..."
+                    )
+                    await asyncio.sleep(wait_time)
+                else:
+                    self._logger.warning(
+                        f"BLK-1-04: DB query timeout after {max_retries + 1} attempts for request {request_id}"
+                    )
+                    return None
+                    
+            except Exception as e:
+                self._logger.warning(f"BLK-1-04: Error querying destination: {e}")
+                return None
+        
+        return None
     
     async def _blk_1_09_request_routing_api(self, validation_result: ValidationResult, 
                                            destination_check: Dict[str, Any], context: RequestContext) -> RouteResponse:
