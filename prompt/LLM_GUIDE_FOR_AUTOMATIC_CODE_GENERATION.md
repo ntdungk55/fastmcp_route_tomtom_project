@@ -49,8 +49,8 @@ prompt/
 **Mục đích:** Template để gen blocks đúng format
 
 ### 3️⃣ Reports & Feedback (trong `prompt/review/`)
-- **[feature]_analysis.md:**  LLM gen reports (Phase 1) thư mục trong `prompt/review/llm/`
-- **feedback.md:** Developer feedback ONLY thư mục trong `prompt/review/developer/`
+- **[feature]_analysis.md:** LLM gen reports (Phase 1) → `prompt/review/llm/`
+- **feedback.md:** Developer feedback ONLY → `prompt/review/developer/`
 
 ---
 
@@ -61,8 +61,8 @@ Developer: "Tôi muốn tạo/sửa feature"
    ↓
 Phase 1: LLM ANALYSIS & REPORT
    → Scan codebase
-   → Gen report → lưu: prompt/review/[feature]_analysis.md
-   → Check feedback.md (developer lessons)
+   → Gen report → lưu: prompt/review/llm/[feature]_analysis.md
+   → Check feedback.md (from prompt/review/developer/feedback.md)
    ↓
 Developer quyết định (dựa trên report)
    → ADD / MODIFY / DELETE / SKIP
@@ -83,11 +83,11 @@ Phase 2: LLM EXECUTE
 2. Check blocks: specs/diagrams/blocks/BLK-*-*.md
 3. Check code: use_cases, ports, adapters, DTOs
 4. Find dependencies
-5. Read feedback.md (developer lessons)
+5. Read feedback: prompt/review/developer/feedback.md
 ```
 
 ### Generate REPORT
-**Save to:** `prompt/review/[feature_name]_analysis.md`
+**Save to:** `prompt/review/llm/[feature_name]_analysis.md`
 
 ```markdown
 # Feature Analysis Report: [feature_name]
@@ -145,13 +145,13 @@ Step 3: Gen Code (after approval)
 ## 📊 REPORTS & FEEDBACK
 
 ### LLM Generated Reports
-**Location:** `prompt/review/llm/[feature]_analysis.md`
+**Location:** `prompt/review/llm/[feature_name]_analysis.md`
 - LLM tạo sau Phase 1 analysis
 - Giúp Developer quyết định
 - Developer có thể xóa/modify sau dùng
 
 ### Developer Feedback
-**Location:** `prompt/review/feedback.md`
+**Location:** `prompt/review/developer/feedback.md`
 - **ONLY Developer điền** ⏺️
 - **LLM chỉ ĐỌC để học**
 - LLM KHÔNG được ghi vào file này
@@ -179,8 +179,8 @@ Iteration 3 → LLM đọc feedback → code even better
 
 ### Phase 1 (Analysis):
 - ✅ Scan codebase
-- ✅ Gen REPORT → lưu prompt/review/
-- ✅ Check feedback.md (đọc)
+- ✅ Gen REPORT → lưu prompt/review/llm/
+- ✅ Check feedback.md (đọc từ prompt/review/developer/)
 - ✅ Recommend action
 - ❌ KHÔNG execute
 
@@ -202,9 +202,9 @@ Iteration 3 → LLM đọc feedback → code even better
 
 ## ✅ Best Practices
 
-✅ Gen report → lưu prompt/review/  
+✅ Gen report → lưu prompt/review/llm/  
 ✅ Wait for user review (blocks & decision)  
-✅ Check feedback.md (read-only)  
+✅ Check feedback.md → read-only (prompt/review/developer/)  
 ✅ Apply lessons từ feedback  
 ✅ Follow template & backbone  
 
@@ -215,5 +215,5 @@ Iteration 3 → LLM đọc feedback → code even better
 
 ---
 
-**Version**: 3.0 (Reports in review/, Developer feedback only)  
+**Version**: 3.1 (All paths consistent: llm/ & developer/)  
 **Status**: ✅ Ready
