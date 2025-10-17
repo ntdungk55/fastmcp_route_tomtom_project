@@ -29,7 +29,6 @@ from app.domain.value_objects.latlon import LatLon
 
 # Application DTOs
 from app.application.dto.calculate_route_dto import CalculateRouteCommand
-from app.application.dto.detailed_route_dto import DetailedRouteRequest
 from app.application.dto.geocoding_dto import (
     GeocodeAddressCommandDTO,
     StructuredGeocodeCommandDTO,
@@ -49,13 +48,12 @@ from app.application.dto.traffic_dto import (
 # DI Container
 from app.di.container import Container
 from app.application.use_cases.save_destination import SaveDestinationUseCase
-from app.application.services.route_traffic_service import get_route_traffic_service
 from fastmcp import FastMCP
 
 # Constants
 from app.domain.constants.api_constants import LanguageConstants, CountryConstants, LimitConstants, TravelModeConstants
 from app.application.constants.validation_constants import DefaultValues
-from app.interfaces.constants.mcp_constants import MCPServerConstants, MCPToolDescriptions, MCPErrorMessages, MCPSuccessMessages, MCPDetailedRouteLogMessages, MCPTypeConstants, MCPToolNames, MCPToolErrorMessages, MCPDestinationErrorMessages
+from app.interfaces.constants.mcp_constants import MCPServerConstants, MCPToolDescriptions, MCPErrorMessages, MCPSuccessMessages, MCPTypeConstants, MCPToolNames, MCPToolErrorMessages, MCPDestinationErrorMessages
 
 # FastMCP instance
 mcp = FastMCP(MCPServerConstants.SERVER_NAME)
@@ -66,63 +64,7 @@ TravelModeLiteral = Literal["car", "bicycle", "foot"]
 # Container instance với Dependency Injection
 _container = Container()
 
-# Route Traffic Service
-_route_traffic_service = get_route_traffic_service()
-
 # FastMCP tool definitions
-@mcp.tool(name=MCPToolNames.CALCULATE_ROUTE)
-async def calculate_route_tool(
-    origin_lat: float,
-    origin_lon: float,
-    dest_lat: float,
-    dest_lon: float,
-    travel_mode: TravelModeLiteral = TravelModeConstants.CAR,
-) -> dict:
-    f"""{MCPToolDescriptions.CALCULATE_ROUTE}"""
-    try:
-        # Sử dụng integrated flow service
-        request_data = {
-            "jsonrpc": "2.0",
-            "id": f"req-{uuid.uuid4().hex[:8]}",
-            "method": "tools/call",
-            "params": {
-                "name": "calculate_route",
-                "arguments": {
-                    "origin_lat": origin_lat,
-                    "origin_lon": origin_lon,
-                    "dest_lat": dest_lat,
-                    "dest_lon": dest_lon,
-                    "travel_mode": travel_mode
-                }
-            }
-        }
-        
-        result = await _route_traffic_service.process_route_traffic(request_data)
-        
-        # Log the result
-        if "result" in result:
-            print(f"\nMCP Server Response for calculate_route:")
-            print(f"Request ID: {result['id']}")
-            print(f"Success: {result['result'].get('type')}")
-            if 'summary' in result['result']:
-                summary = result['result']['summary']
-                print(f"Distance: {summary.get('distance', {}).get('formatted', 'N/A')}")
-                print(f"Duration: {summary.get('duration', {}).get('formatted', 'N/A')}")
-                print(f"Traffic: {summary.get('traffic_info', 'N/A')}")
-            
-            # Show route overview
-            route_overview = result['result'].get('route_overview', {})
-            if route_overview:
-                print(f"Main roads: {', '.join(route_overview.get('main_roads', []))}")
-                print(f"Via cities: {', '.join(route_overview.get('via_cities', []))}")
-        else:
-            print(f"\nError in calculate_route: {result.get('error', {}).get('message', 'Unknown error')}")
-        
-        return result
-    except Exception as e:
-        print(f"\nError in calculate_route: {str(e)}")
-        return {"error": MCPToolErrorMessages.INVALID_COORDINATES.format(error=str(e))}
-
 @mcp.tool(name=MCPToolNames.GEOCODE_ADDRESS)
 async def geocode_address_tool(
     address: str,
@@ -469,95 +411,6 @@ async def update_destination_tool(
     except Exception as e:
         return {"error": MCPToolErrorMessages.UPDATE_DESTINATION_FAILED.format(error=str(e))}
 
-@mcp.tool(name=MCPToolNames.GET_DETAILED_ROUTE)
-async def get_detailed_route_tool(
-    origin_address: str,
-    destination_address: str,
-    travel_mode: TravelModeLiteral = TravelModeConstants.CAR,
-    country_set: str = CountryConstants.DEFAULT,
-    language: str = LanguageConstants.DEFAULT
-) -> dict:
-    f"""{MCPToolDescriptions.GET_DETAILED_ROUTE}"""
-    try:
-        # Sử dụng integrated flow service với 13 blocks
-        request_data = {
-            "jsonrpc": "2.0",
-            "id": f"req-{uuid.uuid4().hex[:8]}",
-            "method": "tools/call",
-            "params": {
-                "name": "get_detailed_route",
-                "arguments": {
-                    "origin_address": origin_address,
-                    "destination_address": destination_address,
-                    "travel_mode": travel_mode,
-                    "country_set": country_set,
-                    "language": language
-                }
-            }
-        }
-        
-        # Process qua tất cả 13 blocks
-        result = await _route_traffic_service.process_route_traffic(request_data)
-        
-        # Log the result theo model mới
-        if "result" in result:
-            print(f"\nMCP Server Response for get_detailed_route:")
-            print(f"Request ID: {result['id']}")
-            
-            response_data = result['result']
-            
-            # 1. Tên điểm đến điểm đi
-            origin = response_data.get('origin', {})
-            destination = response_data.get('destination', {})
-            print(f"1. Điểm xuất phát: {origin.get('name', 'N/A')} - {origin.get('address', 'N/A')}")
-            print(f"   Điểm đến: {destination.get('name', 'N/A')} - {destination.get('address', 'N/A')}")
-            
-            # 2. Thời gian đi
-            travel_time = response_data.get('travel_time', {})
-            print(f"2. Thời gian đi: {travel_time.get('formatted', 'N/A')}")
-            if travel_time.get('departure_time'):
-                print(f"   Khởi hành: {travel_time.get('departure_time')}")
-            if travel_time.get('arrival_time'):
-                print(f"   Đến nơi: {travel_time.get('arrival_time')}")
-            
-            # 3. Cách di chuyển
-            travel_mode = response_data.get('travel_mode', {})
-            print(f"3. Cách di chuyển: {travel_mode.get('description', 'N/A')} ({travel_mode.get('mode', 'N/A')})")
-            
-            # 4. Hướng dẫn chi tiết (kèm trạng thái đường đi)
-            main_route = response_data.get('main_route', {})
-            if main_route:
-                print(f"4. Tuyến đường chính: {main_route.get('summary', 'N/A')}")
-                traffic = main_route.get('traffic_condition', {})
-                print(f"   Trạng thái giao thông: {traffic.get('description', 'N/A')} (chậm {traffic.get('delay_minutes', 0)} phút)")
-                
-                instructions = main_route.get('instructions', [])
-                if instructions:
-                    print("   Hướng dẫn chi tiết (3 bước đầu):")
-                    for inst in instructions[:3]:
-                        print(f"      {inst.get('step')}. {inst.get('instruction')} ({inst.get('distance_meters', 0)}m, {inst.get('duration_seconds', 0)}s)")
-                        if inst.get('traffic_condition'):
-                            traffic_inst = inst['traffic_condition']
-                            print(f"         Giao thông: {traffic_inst.get('description', 'N/A')}")
-            
-            # 5. Cách di chuyển khác (kèm trạng thái đường đi)
-            alt_routes = response_data.get('alternative_routes', [])
-            if alt_routes:
-                print(f"5. Tuyến đường thay thế ({len(alt_routes)} tuyến):")
-                for i, alt_route in enumerate(alt_routes, 1):
-                    print(f"   Tuyến {i}: {alt_route.get('summary', 'N/A')}")
-                    alt_traffic = alt_route.get('traffic_condition', {})
-                    print(f"      Trạng thái: {alt_traffic.get('description', 'N/A')} (chậm {alt_traffic.get('delay_minutes', 0)} phút)")
-                    print(f"      Khoảng cách: {alt_route.get('total_distance_meters', 0)}m")
-                    print(f"      Thời gian: {alt_route.get('total_duration_seconds', 0)}s")
-        else:
-            print(f"\nError in get_detailed_route: {result.get('error', {}).get('message', 'Unknown error')}")
-        
-        return result
-    except Exception as e:
-        print(f"\nException in get_detailed_route: {str(e)}")
-        return {"error": MCPToolErrorMessages.GET_DETAILED_ROUTE_FAILED.format(error=str(e))}
-
 # Traffic recommendations đã được chuyển vào TrafficMapper trong ACL layer
         
 def main():
@@ -580,7 +433,6 @@ def main():
                     MCPServerConstants.DESTINATION_TOOLS)
         
         print(f"Available tools ({len(all_tools)}):")
-        print(f"   • calculate_route - {MCPToolDescriptions.CALCULATE_ROUTE}")
         print(f"   • geocode_address - {MCPToolDescriptions.GEOCODE_ADDRESS}")
         print(f"   • get_intersection_position - {MCPToolDescriptions.GET_INTERSECTION_POSITION}")
         print(f"   • get_street_center_position - {MCPToolDescriptions.GET_STREET_CENTER_POSITION}")
@@ -589,7 +441,6 @@ def main():
         print(f"   • get_via_route - {MCPToolDescriptions.GET_VIA_ROUTE}")
         print(f"   • analyze_route_traffic - {MCPToolDescriptions.ANALYZE_ROUTE_TRAFFIC}")
         print(f"   • check_traffic_between_addresses - {MCPToolDescriptions.CHECK_TRAFFIC_BETWEEN_ADDRESSES}")
-        print(f"   • get_detailed_route - {MCPToolDescriptions.GET_DETAILED_ROUTE}")
         print(f"   • save_destination - {MCPToolDescriptions.SAVE_DESTINATION}")
         print(f"   • list_destinations - {MCPToolDescriptions.LIST_DESTINATIONS}")
         print(f"   • delete_destination - {MCPToolDescriptions.DELETE_DESTINATION}")
