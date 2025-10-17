@@ -37,7 +37,7 @@ class GetDetailedRouteUseCase:
         self._geocoding_provider = geocoding_provider
         self._routing_provider = routing_provider
 
-    async def handle(self, request: DetailedRouteRequest) -> DetailedRouteResponse:
+    async def execute(self, request: DetailedRouteRequest) -> DetailedRouteResponse:
         """Handle detailed route calculation between two addresses"""
         try:
             logger.info(f"Calculating detailed route from '{request.origin_address}' to '{request.destination_address}'")

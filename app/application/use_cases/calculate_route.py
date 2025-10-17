@@ -8,5 +8,5 @@ class CalculateRoute:
     def __init__(self, routing: RoutingProvider):
         self._routing = routing
 
-    async def handle(self, cmd: CalculateRouteCommand) -> RoutePlan:
+    async def execute(self, cmd: CalculateRouteCommand) -> RoutePlan:
         return await self._routing.calculate_route(cmd)
