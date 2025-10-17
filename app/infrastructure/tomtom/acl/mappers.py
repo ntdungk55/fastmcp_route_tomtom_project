@@ -1,6 +1,6 @@
 """TomTom Routing ACL Mapper - Chuyển đổi dữ liệu routing cơ bản."""
 
-from app.application.dto.calculate_route_dto import RoutePlan, RouteSection, RouteSummary
+from app.application.dto.calculate_route_dto import RoutePlan, RouteSection, RouteSummary, RouteGuidance, RouteInstruction
 
 
 class TomTomMapper:
@@ -13,13 +13,13 @@ class TomTomMapper:
         
         Đầu vào: dict - Raw response từ TomTom Routing API
         Đầu ra: RoutePlan - Kế hoạch tuyến đường domain
-        Xử lý: Lấy route đầu tiên, trích xuất summary và sections
+        Xử lý: Lấy route đầu tiên, trích xuất summary, sections và guidance
         """
         # Lấy danh sách routes từ response
         routes = payload.get("routes", [])
         if not routes:
             # Trả về RoutePlan rỗng nếu không có route
-            return RoutePlan(summary=RouteSummary(0, 0), sections=[])
+            return RoutePlan(summary=RouteSummary(0, 0), sections=[], guidance=RouteGuidance(instructions=[]))
         # Lấy route đầu tiên (tốt nhất)
         r0 = routes[0]
         s = r0.get("summary", {})
@@ -41,8 +41,26 @@ class TomTomMapper:
             # Tạo RouteSection và thêm vào danh sách
             sections.append(RouteSection(kind=kind, start_index=0, end_index=0))
 
-        # Trả về RoutePlan hoàn chỉnh
-        return RoutePlan(summary=RouteSummary(distance, duration), sections=sections)
+        # Trích xuất guidance và instructions
+        guidance_data = r0.get("guidance", {})
+        instructions_data = guidance_data.get("instructions", [])
+        instructions: list[RouteInstruction] = []
+        
+        for idx, inst in enumerate(instructions_data, 1):
+            instr = RouteInstruction(
+                step=idx,
+                message=inst.get("message", "Continue"),
+                distance_in_meters=int(inst.get("distanceInMeters", 0)),
+                duration_in_seconds=int(inst.get("durationInSeconds", 0))
+            )
+            instructions.append(instr)
+
+        # Trả về RoutePlan hoàn chỉnh với guidance
+        return RoutePlan(
+            summary=RouteSummary(distance, duration), 
+            sections=sections,
+            guidance=RouteGuidance(instructions=instructions)
+        )
     
     def to_domain_route_plan_with_guidance(self, payload: dict) -> dict:
         """Chuyển đổi TomTom routing response thành dict với guidance chi tiết.

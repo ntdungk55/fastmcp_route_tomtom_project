@@ -152,21 +152,49 @@ class GetDetailedRouteUseCase:
     def _extract_instructions(self, route_plan) -> list:
         """Extract turn-by-turn instructions from route plan."""
         instructions = []
-        if hasattr(route_plan, 'guidance') and hasattr(route_plan.guidance, 'instructions'):
-            for idx, instruction in enumerate(route_plan.guidance.instructions, 1):
+        try:
+            # Handle TomTom response structure via RoutePlan.guidance
+            if hasattr(route_plan, 'guidance') and hasattr(route_plan.guidance, 'instructions'):
+                for idx, instruction in enumerate(route_plan.guidance.instructions, 1):
+                    instr_obj = RouteInstruction(
+                        step=idx,
+                        instruction=getattr(instruction, 'message', 'Continue'),
+                        distance_meters=int(getattr(instruction, 'distance_in_meters', 0)),
+                        duration_seconds=int(getattr(instruction, 'duration_in_seconds', 0)),
+                        traffic_condition=None
+                    )
+                    instructions.append(instr_obj)
+            # Fallback: If no guidance, create basic instruction
+            elif hasattr(route_plan, 'summary'):
                 instr_obj = RouteInstruction(
-                    step=idx,
-                    instruction=getattr(instruction, 'message', 'Continue'),
-                    distance_meters=getattr(instruction, 'distance_in_meters', 0),
-                    duration_seconds=getattr(instruction, 'duration_in_seconds', 0),
+                    step=1,
+                    instruction=f"Head towards destination",
+                    distance_meters=getattr(route_plan.summary, 'distance_m', 0),
+                    duration_seconds=getattr(route_plan.summary, 'duration_s', 0),
                     traffic_condition=None
                 )
                 instructions.append(instr_obj)
+        except Exception as e:
+            logger.warning(f"Failed to extract instructions: {str(e)}")
+        
         return instructions
     
     def _extract_alternative_routes(self, route_plan) -> list:
         """Extract alternative routes from route plan."""
         alternatives = []
-        # Placeholder for alternative routes extraction
-        # Can be extended based on routing provider response structure
+        try:
+            # TomTom may return alternative routes in response
+            # This is a placeholder - extend based on actual API response
+            if hasattr(route_plan, 'legs') and len(getattr(route_plan, 'legs', [])) > 1:
+                for leg in route_plan.legs[1:]:  # Skip first (main route)
+                    alt_route = AlternativeRoute(
+                        summary=f"Alternative route",
+                        total_distance_meters=getattr(leg, 'summary', {}).get('distance_m', 0),
+                        total_duration_seconds=getattr(leg, 'summary', {}).get('duration_s', 0),
+                        traffic_condition=None
+                    )
+                    alternatives.append(alt_route)
+        except Exception as e:
+            logger.warning(f"Failed to extract alternative routes: {str(e)}")
+        
         return alternatives
