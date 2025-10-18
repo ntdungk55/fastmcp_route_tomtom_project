@@ -24,8 +24,11 @@ class TomTomMapper:
             # Trả về RoutePlan rỗng nếu không có route
             logger.warning("No routes found in TomTom response")
             return RoutePlan(summary=RouteSummary(0, 0), sections=[], guidance=RouteGuidance(instructions=[]))
+        
         # Lấy route đầu tiên (tốt nhất)
         r0 = routes[0]
+        logger.info(f"DEBUG: Route keys = {list(r0.keys())}")
+        
         s = r0.get("summary", {})
         
         # Trích xuất thông tin khoảng cách và thời gian
@@ -45,16 +48,18 @@ class TomTomMapper:
             # Tạo RouteSection và thêm vào danh sách
             sections.append(RouteSection(kind=kind, start_index=0, end_index=0))
 
-        # Trích xuất guidance và instructions
+        # DEBUG: Log guidance data
         guidance_data = r0.get("guidance", {})
-        logger.info(f"DEBUG: guidance_data keys = {list(guidance_data.keys())}")
-        logger.info(f"DEBUG: full guidance_data = {guidance_data}")
+        logger.info(f"DEBUG: guidance keys = {list(guidance_data.keys()) if guidance_data else 'EMPTY'}")
         
-        instructions_data = guidance_data.get("instructions", [])
+        instructions_data = guidance_data.get("instructions", []) if guidance_data else []
         logger.info(f"DEBUG: Found {len(instructions_data)} instructions")
         
-        instructions: list[RouteInstruction] = []
+        if instructions_data:
+            logger.info(f"DEBUG: First instruction = {instructions_data[0] if instructions_data else 'None'}")
         
+        # Extract instructions
+        instructions: list[RouteInstruction] = []
         for idx, inst in enumerate(instructions_data, 1):
             instr = RouteInstruction(
                 step=idx,
@@ -64,7 +69,7 @@ class TomTomMapper:
             )
             instructions.append(instr)
 
-        # Trả về RoutePlan hoàn chỉnh với guidance
+        # Trả về RoutePlan hoàn chỉnh
         return RoutePlan(
             summary=RouteSummary(distance, duration), 
             sections=sections,

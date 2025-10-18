@@ -22,23 +22,22 @@ TAGS: <tag1, tag2, ...>
 
 ## Developer Feedback Items
 
-### Ví dụ (hãy xóa khi có feedback thật):
-
 ```
 ID: BUG-20251017-001
-MODULE: app/application/use_cases/update_destination.py
-ISSUE: Entity mutation - modify properties trực tiếp
-CAUSE: LLM gen code: updated_destination.name = new_name (direct mutation)
-FIX: Tạo Destination object mới thay vì mutation
-BÀI HỌC: Entity KHÔNG mutation! Phải immutable
+MODULE: giao tiếp với llm
+ISSUE: llm chạy server qua terminal báo lỗi sai thư mục
+CAUSE:   khi chạy server qua terminal , llm không chuyển về folder chứa file server chạy
+FIX: chuyển đến thư mục chứa dư án rồi mới chạy
+BÀI HỌC: DI chuyển về đúng thư mục rồi mới chạy server
 SEVERITY: Major
-TAGS: ddd-violation, entity-immutability
+TAGS: llm behavior
 ```
-
----
-
-**Hướng dẫn cho Developer:**
-1. Sau khi review code LLM gen
-2. Ghi lỗi/pattern tìm thấy vào file này
-3. LLM sẽ đọc những "BÀI HỌC" này ở lần gen tiếp theo
-4. Code gen quality sẽ cải thiện qua iterations
+```
+ID: BUG-20251017-001
+MODULE: giao tiếp với llm
+ISSUE: llm chạy server qua terminal báo lỗi không thực hiện băng "python start_server.py"
+CAUSE:  dự án sử dụng uv để giao tiếp với thư viện
+FIX: chạy lệnh " uv run python xxx.py" với file xxx.py là file chứa mcp tool 
+BÀI HỌC: Phải biết môi trường đang sử dụng thư viện nào để chạy lệnh
+SEVERITY: Major
+TAGS: llm behavior
