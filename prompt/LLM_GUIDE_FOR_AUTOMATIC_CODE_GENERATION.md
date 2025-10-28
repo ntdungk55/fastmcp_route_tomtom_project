@@ -60,17 +60,18 @@ prompt/
 Developer: "Tôi muốn tạo/sửa feature"
    ↓
 Phase 1: LLM ANALYSIS & REPORT
-   → Scan codebase
+   → Đọc file .drawio và các file mô tả trong thư mục prompt/specs/diagrams/ xem có thiếu gì không? 
+   → Scan codebase dựa trên các file trong thư mục project prompt/architecture/ xem có vấn đề gì không?
+   → Dựa vào file specs phân tích sự khác biệt giữa code và logic
    → Gen report → lưu: prompt/review/llm/[feature]_analysis.md
-   → Check feedback.md (from prompt/review/developer/feedback.md)
    ↓
 Developer quyết định (dựa trên report)
    → ADD / MODIFY / DELETE / SKIP
    ↓
 Phase 2: LLM EXECUTE
-   → Gen blocks (template-based)
+   → Check feedback.md (from prompt/review/developer/feedback.md) ngăn lỗi trong quá trình gen code
+   → Gen code
    → WAIT for user review
-   → Gen code (approved blocks)
 ```
 
 ---
@@ -83,7 +84,6 @@ Phase 2: LLM EXECUTE
 2. Check blocks: specs/diagrams/blocks/BLK-*-*.md
 3. Check code: use_cases, ports, adapters, DTOs
 4. Find dependencies
-5. Read feedback: prompt/review/developer/feedback.md
 ```
 
 ### Generate REPORT
@@ -103,6 +103,7 @@ Phase 2: LLM EXECUTE
 
 ## Recommendation
 - Action: ADD / MODIFY / DELETE / SKIP
+- Đưa ra 1 Approval Gates bao gồm các options để Developer sẽ đánh dấu và lưa chọn (đưa ra quy định đánh dấu cụ thể). Approval Gates hoàn thành tất cả thì LLM mới được gen code. không thì sẽ thông báo điểm dừng.
 ```
 
 ### Developer Decision
@@ -129,6 +130,8 @@ Step 2: STOP & WAIT for Developer Review
    → User review & approve blocks
    
 Step 3: Gen Code (after approval)
+
+   → Read feedback: prompt/review/developer/feedback.md
    → Generate code files
    → Follow backbone & guidelines
    → Apply feedback lessons
@@ -180,11 +183,11 @@ Iteration 3 → LLM đọc feedback → code even better
 ### Phase 1 (Analysis):
 - ✅ Scan codebase
 - ✅ Gen REPORT → lưu prompt/review/llm/
-- ✅ Check feedback.md (đọc từ prompt/review/developer/)
 - ✅ Recommend action
 - ❌ KHÔNG execute
 
 ### Phase 2 (Execution):
+- ✅ Check feedback.md (đọc từ prompt/review/developer/)
 - ✅ Gen block descriptions (template-based)
 - ⏸️ **MUST WAIT for user review**
 - ✅ Gen code (from approved blocks)
