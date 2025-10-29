@@ -45,7 +45,8 @@ from app.interfaces.constants.mcp_constants import MCPServerConstants, MCPToolDe
 mcp = FastMCP(MCPServerConstants.SERVER_NAME)
 
 # Create Literal type from constants - using string literals from constants
-TravelModeLiteral = Literal["car", "bicycle", "foot"]
+# Note: "motorcycle" is accepted but will be treated as "car" by TomTom API
+TravelModeLiteral = Literal["car", "bicycle", "foot", "motorcycle"]
 
 # Container instance với Dependency Injection
 _container = Container()
@@ -177,11 +178,14 @@ async def get_detailed_route_tool(
 ) -> dict:
     f"""{MCPToolDescriptions.GET_DETAILED_ROUTE}"""
     try:
+        # Convert motorcycle to car (TomTom API doesn't have separate motorcycle mode)
+        actual_mode = "car" if travel_mode == "motorcycle" else travel_mode
+        
         # Sử dụng Get Detailed Route Use Case
         request = DetailedRouteRequest(
             origin_address=origin_address,
             destination_address=destination_address,
-            travel_mode=travel_mode,
+            travel_mode=actual_mode,
             country_set=country_set,
             language=language
         )

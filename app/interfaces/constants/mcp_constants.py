@@ -83,15 +83,30 @@ class MCPToolDescriptions:
     Calculate detailed route with step-by-step driving instructions between two addresses.
     
     INPUT:
-    - origin_address: str (starting address)
-    - destination_address: str (destination address)
-    - travel_mode: str (optional, default: "car") - "car", "bicycle", or "foot"
-    - country_set: str (optional, default: "VN")
-    - language: str (optional, default: "vi-VN")
+    - origin_address: str (starting address in Vietnamese or English)
+      Examples: "Hồ Gươm, Hà Nội", "Ben Thanh Market, Ho Chi Minh City"
+      
+    - destination_address: str (destination address in Vietnamese or English)
+      Examples: "Chợ Bến Thành, TP.HCM", "Hoan Kiem Lake, Hanoi"
+      
+    - travel_mode: str (optional, default: "car") - MUST be one of these exact values:
+      * "car" - For cars, taxis (xe hơi, taxi)
+      * "motorcycle" - For motorbikes, scooters (xe máy, xe tay ga)
+      * "bicycle" - For bicycles (xe đạp)
+      * "foot" - For walking/pedestrians (đi bộ)
+      
+    - country_set: str (optional, default: "VN") - ISO country code
+    - language: str (optional, default: "vi-VN") - Response language
     
     OUTPUT:
     - JSON with detailed route including driving instructions, distances, times, and traffic info
     - Returns error if addresses cannot be found or route cannot be calculated
+    
+    EXAMPLES:
+    - Car route: travel_mode="car"
+    - Motorcycle route: travel_mode="motorcycle"
+    - Bicycle route: travel_mode="bicycle"  
+    - Walking route: travel_mode="foot"
     """
     
     # GEOCODING TOOLS
