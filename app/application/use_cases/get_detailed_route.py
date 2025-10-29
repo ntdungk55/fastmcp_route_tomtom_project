@@ -84,11 +84,22 @@ class GetDetailedRouteUseCase:
             )
             traffic_response = await self._traffic_provider.check_severe_traffic(traffic_cmd)
             
+            # DEBUG: Log traffic response
+            logger.info(f"🚦 TRAFFIC RESPONSE DEBUG:")
+            logger.info(f"  - Success: {traffic_response.success}")
+            logger.info(f"  - Has traffic_sections: {hasattr(traffic_response, 'traffic_sections')}")
+            if hasattr(traffic_response, 'traffic_sections'):
+                logger.info(f"  - Traffic sections count: {len(traffic_response.traffic_sections) if traffic_response.traffic_sections else 0}")
+                if traffic_response.traffic_sections:
+                    logger.info(f"  - First section: {traffic_response.traffic_sections[0]}")
+            
             # Step 5: Process traffic sections if found (BLK-1-16, BLK-1-17)
             jam_pairs = []
             if traffic_response.success and traffic_response.traffic_sections:
                 logger.info(f"Found {len(traffic_response.traffic_sections)} traffic sections, processing...")
                 jam_pairs = await self._process_traffic_sections(route_plan, traffic_response.traffic_sections)
+            else:
+                logger.warning("No traffic sections found in response")
             
             # Step 6: Build response
             origin_point = RoutePoint(
@@ -115,6 +126,12 @@ class GetDetailedRouteUseCase:
                 else:
                     traffic_description = "No traffic delays"
             
+            # DEBUG: Log jam pairs before building sections
+            logger.info(f"🏗️ BUILDING TRAFFIC SECTIONS:")
+            logger.info(f"  - Jam pairs count: {len(jam_pairs)}")
+            if jam_pairs:
+                logger.info(f"  - First jam pair: {jam_pairs[0]}")
+            
             main_route = MainRoute(
                 summary=f"Route via {request.travel_mode}",
                 total_distance_meters=route_plan.summary.distance_m,
@@ -126,6 +143,12 @@ class GetDetailedRouteUseCase:
                 instructions=self._extract_instructions(route_plan),
                 sections=self._build_traffic_sections(route_plan, jam_pairs)
             )
+            
+            # DEBUG: Log final sections
+            logger.info(f"📦 MAIN ROUTE SECTIONS:")
+            logger.info(f"  - Sections count: {len(main_route.sections) if main_route.sections else 0}")
+            if main_route.sections:
+                logger.info(f"  - First section: {main_route.sections[0]}")
             
             # Build alternative routes if available
             alternative_routes = self._extract_alternative_routes(route_plan)

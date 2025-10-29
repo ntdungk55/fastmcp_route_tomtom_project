@@ -23,7 +23,7 @@ class TomTomMapper:
         if not routes:
             # Trả về RoutePlan rỗng nếu không có route
             logger.warning("No routes found in TomTom response")
-            return RoutePlan(summary=RouteSummary(0, 0), sections=[], guidance=RouteGuidance(instructions=[]))
+            return RoutePlan(summary=RouteSummary(distance_m=0, duration_s=0), sections=[], guidance=RouteGuidance(instructions=[]))
         
         # Lấy route đầu tiên (tốt nhất)
         r0 = routes[0]
@@ -71,7 +71,7 @@ class TomTomMapper:
 
         # Trả về RoutePlan hoàn chỉnh
         return RoutePlan(
-            summary=RouteSummary(distance, duration), 
+            summary=RouteSummary(distance_m=distance, duration_s=duration), 
             sections=sections,
             guidance=RouteGuidance(instructions=instructions)
         )
@@ -85,7 +85,7 @@ class TomTomMapper:
         routes = payload.get("routes", [])
         if not routes:
             return RoutePlan(
-                summary=RouteSummary(0, 0), 
+                summary=RouteSummary(distance_m=0, duration_s=0), 
                 sections=[], 
                 guidance=RouteGuidance(instructions=[])
             )
@@ -236,8 +236,8 @@ class TomTomMapper:
         
         return RoutePlan(
             summary=RouteSummary(
-                distance=int(summary_data.get("lengthInMeters", 0)),
-                duration=int(summary_data.get("travelTimeInSeconds", 0))
+                distance_m=int(summary_data.get("lengthInMeters", 0)),
+                duration_s=int(summary_data.get("travelTimeInSeconds", 0))
             ),
             sections=route_sections,
             guidance=RouteGuidance(instructions=route_instructions)

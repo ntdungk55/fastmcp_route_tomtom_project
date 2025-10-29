@@ -48,7 +48,7 @@ class TomTomTrafficMapper:
         """
         routes = payload.get("routes", [])
         if not routes:
-            return RoutePlan(summary=RouteSummary(0, 0), sections=[])
+            return RoutePlan(summary=RouteSummary(distance_m=0, duration_s=0), sections=[])
         
         route = routes[0]
         summary_data = route.get("summary", {})
@@ -69,7 +69,7 @@ class TomTomTrafficMapper:
             ))
         
         return RoutePlan(
-            summary=RouteSummary(distance, duration),
+            summary=RouteSummary(distance_m=distance, duration_s=duration),
             sections=sections
         )
     

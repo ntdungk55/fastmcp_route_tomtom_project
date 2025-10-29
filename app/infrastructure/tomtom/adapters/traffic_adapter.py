@@ -79,7 +79,13 @@ class TomTomTrafficAdapter(TrafficProvider):
         """Parse TomTom traffic response thành TrafficResponse."""
         try:
             routes = payload.get("routes", [])
+            
+            # DEBUG: Log raw response structure
+            logger.info(f"🔍 RAW TOMTOM RESPONSE DEBUG:")
+            logger.info(f"  - Routes count: {len(routes)}")
+            
             if not routes:
+                logger.warning("No routes in TomTom response")
                 return TrafficResponse(
                     success=True,
                     traffic_sections=[],
@@ -91,13 +97,25 @@ class TomTomTrafficAdapter(TrafficProvider):
             summary = route.get("summary", {})
             sections = route.get("sections", [])
             
+            # DEBUG: Log sections info
+            logger.info(f"  - Sections count: {len(sections)}")
+            logger.info(f"  - Route keys: {list(route.keys())}")
+            if sections:
+                logger.info(f"  - First section type: {sections[0].get('sectionType')}")
+                logger.info(f"  - First section keys: {list(sections[0].keys())}")
+                logger.info(f"  - First section data: {sections[0]}")
+            
             # Trích xuất traffic sections
             traffic_sections = []
             total_delay = 0
             total_traffic_length = 0
             
-            for section in sections:
-                if section.get("sectionType") == "TRAFFIC":
+            logger.info(f"🚦 PARSING TRAFFIC SECTIONS:")
+            for idx, section in enumerate(sections):
+                section_type = section.get("sectionType")
+                logger.info(f"  - Section {idx}: type={section_type}, delayInSeconds={section.get('delayInSeconds', 0)}")
+                
+                if section_type == "TRAFFIC":
                     traffic_section = TrafficSection(
                         section_type=section.get("sectionType", ""),
                         start_point_index=section.get("startPointIndex", 0),
@@ -111,6 +129,12 @@ class TomTomTrafficAdapter(TrafficProvider):
                     traffic_sections.append(traffic_section)
                     total_delay += traffic_section.delay_seconds
                     total_traffic_length += section.get("lengthInMeters", 0)
+                    logger.info(f"    ✓ Added TRAFFIC section with {traffic_section.delay_seconds}s delay")
+            
+            logger.info(f"📊 TRAFFIC PARSING COMPLETE:")
+            logger.info(f"  - Total sections found: {len(traffic_sections)}")
+            logger.info(f"  - Total delay: {total_delay}s")
+            logger.info(f"  - Total traffic length: {total_traffic_length}m")
             
             return TrafficResponse(
                 success=True,
