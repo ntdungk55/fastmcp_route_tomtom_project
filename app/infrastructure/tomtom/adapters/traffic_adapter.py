@@ -59,6 +59,32 @@ class TomTomTrafficAdapter(TrafficProvider):
             # Gửi request và xử lý response
             logger.debug(f"Sending traffic check request to: {req.url}")
             payload = await self._http.send(req)
+            
+            # LOG: Response đã nhận từ TomTom API
+            print(f"\n{'='*80}")
+            print(f"📥 RECEIVED TRAFFIC RESPONSE FROM TOMTOM API")
+            print(f"{'='*80}")
+            print(f"🔗 Request URL: {req.url}")
+            print(f"📊 Routes in response: {len(payload.get('routes', []))}")
+            if payload.get('routes'):
+                route = payload['routes'][0]
+                summary = route.get('summary', {})
+                print(f"📏 Route length: {summary.get('lengthInMeters', 0)}m")
+                print(f"⏱️  Travel time: {summary.get('travelTimeInSeconds', 0)}s")
+                print(f"⏱️  Traffic time: {summary.get('trafficDelayInSeconds', 0)}s")
+                print(f"🚦 Sections count: {len(route.get('sections', []))}")
+                
+                # Show section types
+                sections = route.get('sections', [])
+                section_types = {}
+                for sec in sections:
+                    sec_type = sec.get('sectionType', 'UNKNOWN')
+                    section_types[sec_type] = section_types.get(sec_type, 0) + 1
+                print(f"📋 Section types breakdown:")
+                for sec_type, count in section_types.items():
+                    print(f"   - {sec_type}: {count}")
+            print(f"{'='*80}\n")
+            
             logger.debug(f"Received traffic response with {len(payload.get('routes', []))} routes")
             
             result = self._parse_traffic_response(payload)

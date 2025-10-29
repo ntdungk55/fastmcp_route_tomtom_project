@@ -92,4 +92,26 @@ class TomTomRoutingAdapter(RoutingProvider):
         
         # Gửi request và chuyển đổi response thành RoutePlan với guidance
         payload = await self._http.send(req)
+        
+        # LOG: Response đã nhận từ TomTom Routing API
+        print(f"\n{'='*80}")
+        print(f"🗺️  RECEIVED ROUTING RESPONSE FROM TOMTOM API")
+        print(f"{'='*80}")
+        print(f"🔗 Request URL: {req.url}")
+        print(f"📊 Routes in response: {len(payload.get('routes', []))}")
+        if payload.get('routes'):
+            route = payload['routes'][0]
+            summary = route.get('summary', {})
+            guidance = route.get('guidance', {})
+            print(f"📏 Route length: {summary.get('lengthInMeters', 0)}m")
+            print(f"⏱️  Travel time: {summary.get('travelTimeInSeconds', 0)}s")
+            print(f"🧭 Guidance instructions: {len(guidance.get('instructions', []))}")
+            print(f"🚦 Route sections: {len(route.get('sections', []))}")
+            
+            # Show guidance sample
+            instructions = guidance.get('instructions', [])
+            if instructions:
+                print(f"📝 First instruction: {instructions[0].get('message', 'N/A')}")
+        print(f"{'='*80}\n")
+        
         return self._mapper.to_domain_route_plan_with_guidance(payload)
