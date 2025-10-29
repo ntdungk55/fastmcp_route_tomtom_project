@@ -4,22 +4,12 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-# Use Cases
-from app.application.use_cases.analyze_route_traffic import AnalyzeRouteTraffic
-from app.application.use_cases.calculate_route import CalculateRoute
-from app.application.use_cases.check_address_traffic import CheckAddressTraffic
+# Use Cases (only essential ones)
 from app.application.use_cases.delete_destination import DeleteDestinationUseCase
-from app.application.use_cases.geocode_address import GeocodeAddress
 from app.application.use_cases.get_detailed_route import GetDetailedRouteUseCase
-from app.application.use_cases.get_intersection_position import GetIntersectionPosition
-from app.application.use_cases.get_street_center import GetStreetCenter
-from app.application.use_cases.get_traffic_condition import GetTrafficCondition
 from app.application.use_cases.save_destination import SaveDestinationUseCase
 from app.application.use_cases.search_destinations import SearchDestinationsUseCase
 from app.application.use_cases.update_destination import UpdateDestinationUseCase
-from app.application.use_cases.check_traffic import CheckTrafficUseCase
-from app.application.use_cases.reverse_geocode import ReverseGeocodeUseCase
-from app.application.use_cases.process_traffic_sections import ProcessTrafficSectionsUseCase
 
 # Infrastructure
 from app.infrastructure.adapters.memory_destination_repository import MemoryDestinationRepository
@@ -117,24 +107,6 @@ class Container:
     def _init_use_cases(self):
         """Khởi tạo tất cả Use Cases với dependency injection."""
         
-        # Routing Use Cases
-        self.calculate_route = CalculateRoute(self.routing_adapter)
-        
-        # Geocoding Use Cases
-        self.geocode_address = GeocodeAddress(self.geocoding_adapter)
-        self.get_intersection_position = GetIntersectionPosition(self.geocoding_adapter)
-        self.get_street_center = GetStreetCenter(self.geocoding_adapter)
-        
-        # Traffic Use Cases
-        self.get_traffic_condition = GetTrafficCondition(self.traffic_adapter)
-        self.analyze_route_traffic = AnalyzeRouteTraffic(self.traffic_adapter)
-        
-        # Composite Use Cases (cần nhiều adapters)
-        self.check_address_traffic = CheckAddressTraffic(
-            geocoding=self.geocoding_adapter,
-            traffic=self.traffic_adapter
-        )
-        
         # Destination Use Cases
         self.save_destination = SaveDestinationUseCase(
             destination_repository=self.destination_repository,
@@ -155,8 +127,3 @@ class Container:
             traffic_provider=self.traffic_adapter,
             reverse_geocode_provider=self.reverse_geocode_adapter
         )
-        
-        # Traffic Processing Use Cases (mới)
-        self.check_traffic = CheckTrafficUseCase(self.traffic_adapter)
-        self.reverse_geocode = ReverseGeocodeUseCase(self.reverse_geocode_adapter)
-        self.process_traffic_sections = ProcessTrafficSectionsUseCase(self.reverse_geocode_adapter)

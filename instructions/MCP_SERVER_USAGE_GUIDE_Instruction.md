@@ -2,11 +2,12 @@
 
 ## 📋 Tổng Quan
 
-MCP Server này cung cấp dịch vụ tính toán route sử dụng TomTom Routing API thông qua giao thức MCP (Model Context Protocol).
+MCP Server này cung cấp dịch vụ tính toán route chi tiết và quản lý điểm đến sử dụng TomTom API thông qua giao thức MCP (Model Context Protocol).
 
-- **Server Address**: `192.168.1.3:8081`
-- **Protocol**: MCP over HTTP/WebSocket
-- **Available Tools**: `calculate_route`, `check_traffic_between_addresses`, `geocode_address`, `get_route_with_traffic`, `get_traffic_condition`, `get_route_traffic_analysis`
+- **Server Address**: `192.168.1.7:8081`
+- **Protocol**: MCP over Streamable HTTP
+- **Architecture**: Clean Architecture với Ports & Adapters pattern
+- **Available Tools**: 5 tools (route planning + destination management)
 
 ## 🛠️ Cài Đặt và Chạy Server
 
@@ -14,11 +15,10 @@ MCP Server này cung cấp dịch vụ tính toán route sử dụng TomTom Rout
 
 ```bash
 # Clone project và cài đặt dependencies
-git clone <your-repo-url>
 cd fastmcp_route_tomtom_project
 
-# Cài đặt dependencies
-uv sync --dev
+# Cài đặt dependencies với uv
+uv sync
 ```
 
 ### 2. Cấu Hình Environment Variables
@@ -42,118 +42,52 @@ export LOG_LEVEL="INFO"
 ### 3. Khởi Động Server
 
 ```bash
-# Sử dụng Makefile (khuyến nghị)
-make start-server
+# Chạy trực tiếp
+uv run python app/interfaces/mcp/server.py
 
-# Hoặc chạy trực tiếp
-uv run start_server.py
-
-# Hoặc sử dụng Python
-python start_server.py
+# Hoặc sử dụng start script
+uv run python start_server.py
 ```
 
-Server sẽ khởi động tại: `http://192.168.1.3:8081`
+Server sẽ khởi động tại: `http://192.168.1.7:8081`
 
 ## 🔌 Kết Nối MCP Client
 
-### 1. Cấu Hình MCP Client (Claude Desktop/VS Code)
+### Cấu Hình Claude Desktop
 
-Thêm vào file cấu hình MCP client:
+Thêm vào file `claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
     "tomtom-route-server": {
-      "command": "python",
-      "args": ["/path/to/your/project/start_server.py"],
+      "command": "uv",
+      "args": ["run", "python", "D:/Project/Project gennerated by AI/fastmcp_route_tomtom_project/start_server.py"],
       "env": {
-        "TOMTOM_API_KEY": "your_api_key_here",
-        "TOMTOM_BASE_URL": "https://api.tomtom.com",
-        "HTTP_TIMEOUT_SEC": "12",
-        "LOG_LEVEL": "INFO"
+        "TOMTOM_API_KEY": "your_api_key_here"
       }
     }
   }
 }
 ```
 
-### 2. Kết Nối Remote MCP Client
+## 🧰 Available Tools
 
-Nếu client chạy trên máy khác, sử dụng:
+### 1. **get_detailed_route** ⭐
 
-```json
-{
-  "mcpServers": {
-    "tomtom-route-remote": {
-      "transport": {
-        "type": "http",
-        "host": "192.168.1.3",
-        "port": 8081
-      }
-    }
-  }
-}
-```
-
-## 🧰 Sử Dụng Tools
-
-### Tool: `calculate_route`
-
-Tính toán route từ điểm A đến điểm B với thông tin traffic.
-
-**Parameters:**
-- `origin_lat` (float): Vĩ độ điểm xuất phát
-- `origin_lon` (float): Kinh độ điểm xuất phát  
-- `dest_lat` (float): Vĩ độ điểm đến
-- `dest_lon` (float): Kinh độ điểm đến
-- `travel_mode` (string): Phương tiện di chuyển ("car", "bicycle", "foot")
-
-**Ví dụ sử dụng:**
-
-```python
-# Từ Hồ Gươm đến Chợ Bến Thành
-result = await calculate_route(
-    origin_lat=21.0285,
-    origin_lon=105.8542,
-    dest_lat=10.7720,
-    dest_lon=106.6986,
-    travel_mode="car"
-)
-```
-
-**Response format:**
-```json
-{
-  "summary": {
-    "distance_m": 1234567,
-    "duration_s": 45678
-  },
-  "sections": [
-    {
-      "kind": "traffic:JAM",
-      "start_index": 0,
-      "end_index": 10
-    }
-  ]
-}
-```
-
-### Tool: `check_traffic_between_addresses` ⭐ MỚI
-
-Kiểm tra tình trạng giao thông giữa hai địa chỉ bằng cách geocoding và phân tích traffic.
+Tính toán route chi tiết với turn-by-turn instructions và traffic information.
 
 **Parameters:**
 - `origin_address` (string): Địa chỉ xuất phát
 - `destination_address` (string): Địa chỉ đến
-- `country_set` (string): Mã quốc gia (mặc định: "VN")
-- `travel_mode` (string): Phương tiện di chuyển (mặc định: "car")
-- `language` (string): Ngôn ngữ (mặc định: "vi-VN")
+- `travel_mode` (string): Phương tiện ("car", "bicycle", "foot") - mặc định: "car"
+- `country_set` (string): Mã quốc gia - mặc định: "VN"
+- `language` (string): Ngôn ngữ - mặc định: "vi-VN"
 
 **Ví dụ sử dụng:**
 
 ```python
-# Kiểm tra giao thông từ Hồ Gươm đến Chợ Bến Thành
-result = await check_traffic_between_addresses(
+result = await get_detailed_route(
     origin_address="Hồ Gươm, Hoàn Kiếm, Hà Nội",
     destination_address="Chợ Bến Thành, Quận 1, TP.HCM",
     travel_mode="car"
@@ -165,183 +99,256 @@ result = await check_traffic_between_addresses(
 {
   "origin": {
     "address": "Hồ Gươm, Hoàn Kiếm, Hà Nội",
-    "coordinates": {"lat": 21.0285, "lon": 105.8542},
-    "geocoded_address": "Hồ Gươm, Phố Hàng Khay, Hoàn Kiếm, Hà Nội, Vietnam"
+    "name": "Hồ Gươm",
+    "lat": 21.0285,
+    "lon": 105.8542
   },
   "destination": {
     "address": "Chợ Bến Thành, Quận 1, TP.HCM",
-    "coordinates": {"lat": 10.7720, "lon": 106.6986},
-    "geocoded_address": "Chợ Bến Thành, Lê Lợi, Quận 1, TP.HCM, Vietnam"
+    "name": "Chợ Bến Thành",
+    "lat": 10.7720,
+    "lon": 106.6986
   },
-  "route_summary": {
-    "distance_meters": 1234567,
-    "duration_seconds": 45678,
-    "duration_traffic_seconds": 1234
-  },
-  "traffic_analysis": {
-    "overall_status": "HEAVY_TRAFFIC",
-    "traffic_score": 75.5,
-    "conditions_count": {
-      "FLOWING": 5,
-      "SLOW": 3,
-      "JAM": 2,
-      "CLOSED": 0,
-      "UNKNOWN": 0
+  "main_route": {
+    "summary": "Route via car",
+    "total_distance_meters": 1234567,
+    "total_duration_seconds": 45678,
+    "traffic_condition": {
+      "description": "Traffic delays: 15 minutes, 3 sections affected",
+      "delay_minutes": 15
     },
-    "heavy_traffic_sections": [
+    "instructions": [
       {
-        "section_index": 2,
-        "condition": "JAM",
-        "start_index": 10,
-        "end_index": 15
+        "step": 1,
+        "instruction": "Bắt đầu từ điểm xuất phát",
+        "distance_meters": 500,
+        "duration_seconds": 120,
+        "traffic_condition": null
       }
     ],
-    "total_sections": 10
+    "sections": [
+      {
+        "type": "traffic",
+        "start_address": "Đường ABC, Quận X",
+        "end_address": "Đường XYZ, Quận Y",
+        "delay_seconds": 300,
+        "magnitude": 2,
+        "coordinates": {
+          "start": {"lat": 10.77, "lon": 106.69},
+          "end": {"lat": 10.78, "lon": 106.70}
+        }
+      }
+    ]
   },
-  "recommendations": [
-    "🚨 Tình trạng giao thông rất tệ - nên tránh tuyến đường này",
-    "⏰ Nên đi sớm hơn hoặc muộn hơn để tránh giờ cao điểm",
-    "🔄 Cân nhắc sử dụng phương tiện công cộng",
-    "🚧 Có 2 đoạn đường bị kẹt xe nặng",
-    "🕐 Thời gian di chuyển có thể tăng 50% so với bình thường"
-  ]
+  "alternative_routes": [],
+  "travel_mode": "car",
+  "total_alternative_count": 0
 }
 ```
 
-### Tool: `geocode_address`
+### 2. **save_destination**
 
-Chuyển đổi địa chỉ thành tọa độ lat/lon.
+Lưu điểm đến vào database để sử dụng lại sau này.
 
 **Parameters:**
-- `address` (string): Địa chỉ cần geocoding
-- `country_set` (string): Mã quốc gia (mặc định: "VN")
-- `limit` (int): Số lượng kết quả tối đa (mặc định: 1)
-- `language` (string): Ngôn ngữ (mặc định: "vi-VN")
+- `name` (string): Tên điểm đến
+- `address` (string): Địa chỉ điểm đến
 
-### Tool: `get_route_with_traffic`
+**Ví dụ:**
 
-Lấy route tốt nhất với dữ liệu traffic chi tiết.
+```python
+result = await save_destination(
+    name="Văn phòng",
+    address="123 Lê Lợi, Quận 1, TP.HCM"
+)
+```
 
-### Tool: `get_traffic_condition`
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Destination 'Văn phòng' saved successfully",
+  "destination_id": "uuid-here",
+  "error": null
+}
+```
 
-Lấy dữ liệu traffic flow tại một vị trí cụ thể.
+### 3. **list_destinations**
 
-### Tool: `get_route_traffic_analysis`
+Liệt kê tất cả điểm đến đã lưu.
 
-Phân tích route để tìm các đoạn đường bị kẹt xe nặng.
+**Parameters:** Không có
+
+**Ví dụ:**
+
+```python
+result = await list_destinations()
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "destinations": [
+    {
+      "id": "uuid-1",
+      "name": "Văn phòng",
+      "address": "123 Lê Lợi, Quận 1, TP.HCM",
+      "lat": 10.7720,
+      "lon": 106.6986,
+      "created_at": "2025-01-15T10:30:00",
+      "updated_at": "2025-01-15T10:30:00"
+    }
+  ],
+  "total_count": 1,
+  "error": null
+}
+```
+
+### 4. **delete_destination**
+
+Xóa điểm đến đã lưu.
+
+**Parameters:**
+- `name` (string, optional): Tên điểm đến cần xóa
+- `address` (string, optional): Địa chỉ điểm đến cần xóa
+
+**Lưu ý:** Phải cung cấp ít nhất một trong hai: name hoặc address
+
+**Ví dụ:**
+
+```python
+result = await delete_destination(name="Văn phòng")
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Destination deleted successfully",
+  "error": null
+}
+```
+
+### 5. **update_destination**
+
+Cập nhật thông tin điểm đến.
+
+**Parameters:**
+- `destination_id` (string): ID của điểm đến
+- `name` (string, optional): Tên mới
+- `address` (string, optional): Địa chỉ mới
+
+**Lưu ý:** Phải cung cấp ít nhất một trong hai: name hoặc address
+
+**Ví dụ:**
+
+```python
+result = await update_destination(
+    destination_id="uuid-here",
+    name="Văn phòng mới",
+    address="456 Nguyễn Huệ, Quận 1, TP.HCM"
+)
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Destination updated successfully",
+  "destination_id": "uuid-here",
+  "error": null
+}
+```
 
 ## 🔍 Testing và Debug
 
 ### 1. Kiểm Tra Server Health
 
 ```bash
-# Test server accessibility
-curl -X GET http://192.168.1.3:8081/health
-
-# Test MCP capabilities
-curl -X POST http://192.168.1.3:8081/mcp \
-  -H "Content-Type: application/json" \
-  -d '{"method": "tools/list", "params": {}}'
+# Check if server is running
+curl http://192.168.1.7:8081
 ```
 
-### 2. Test Tool Functionality
-
-```bash
-# Test calculate_route tool
-curl -X POST http://192.168.1.3:8081/mcp \
-  -H "Content-Type: application/json" \
-  -d '{
-    "method": "tools/call",
-    "params": {
-      "name": "calculate_route",
-      "arguments": {
-        "origin_lat": 21.0285,
-        "origin_lon": 105.8542,
-        "dest_lat": 10.7720,
-        "dest_lon": 106.6986,
-        "travel_mode": "car"
-      }
-    }
-  }'
-```
-
-## 🚨 Troubleshooting
-
-### 1. Server Không Khởi Động
-
-```bash
-# Kiểm tra port có bị sử dụng không
-netstat -an | findstr :8081    # Windows
-lsof -i :8081                  # Linux/Mac
-
-# Kiểm tra API key
-echo $TOMTOM_API_KEY           # Linux/Mac
-echo $env:TOMTOM_API_KEY       # Windows
-```
-
-### 2. Connection Refused
-
-- Đảm bảo firewall cho phép port 8081
-- Kiểm tra network connectivity đến 192.168.1.3
-- Verify server đang chạy: `ps aux | grep python`
-
-### 3. API Errors
-
-- Kiểm tra TomTom API key hợp lệ
-- Verify network access đến api.tomtom.com
-- Check logs để xem error details
-
-## 📝 Logs và Monitoring
-
-Server logs sẽ hiển thị:
-- Server startup information
-- API requests/responses
-- Error details
-- Performance metrics
-
-```bash
-# Xem logs real-time
-tail -f server.log
-
-# Filter error logs
-grep ERROR server.log
-```
-
-## 🔧 Advanced Configuration
-
-### Custom Host/Port
-
-Sửa file `start_server.py`:
+### 2. Test với Python Client
 
 ```python
-# Thay đổi host/port
-mcp.run(host="0.0.0.0", port=9000)
+import asyncio
+from app.di.container import Container
+
+async def test():
+    container = Container()
+    await container.initialize_database()
+    
+    # Test get_detailed_route
+    result = await container.get_detailed_route.execute(
+        DetailedRouteRequest(
+            origin_address="Hồ Gươm, Hà Nội",
+            destination_address="Chợ Bến Thành, TP.HCM",
+            travel_mode="car"
+        )
+    )
+    print(result)
+
+asyncio.run(test())
 ```
 
-### Environment-specific Settings
+## 📊 Kiến Trúc
 
-Tạo file `.env.production`:
+Server được xây dựng theo **Clean Architecture**:
 
-```env
-TOMTOM_BASE_URL=https://api.tomtom.com
-HTTP_TIMEOUT_SEC=30
-LOG_LEVEL=WARNING
+- **Domain Layer**: Entities, Value Objects, Enums
+- **Application Layer**: Use Cases, DTOs, Ports (interfaces)
+- **Infrastructure Layer**: Adapters (TomTom API, SQLite Database)
+- **Interface Layer**: MCP Server (FastMCP)
+
+### Dependency Injection
+
+Tất cả dependencies được quản lý bởi DI Container:
+- Adapters tự động inject vào Use Cases
+- Repository tự động inject vào Use Cases
+- Configuration tự động load từ environment variables
+
+## 🐛 Troubleshooting
+
+### Server không khởi động
+
+1. Kiểm tra API key:
+```bash
+echo $TOMTOM_API_KEY  # Linux/Mac
+echo $env:TOMTOM_API_KEY  # Windows
 ```
 
-## 📚 Tài Liệu Tham Khảo
+2. Kiểm tra port 8081 có bị chiếm:
+```bash
+netstat -ano | findstr :8081  # Windows
+lsof -i :8081  # Linux/Mac
+```
 
-- [FastMCP Documentation](https://github.com/jlowin/fastmcp)
-- [TomTom Routing API](https://developer.tomtom.com/routing-api/documentation)
-- [MCP Protocol Specification](https://modelcontextprotocol.io/)
+### Tool không trả về kết quả
 
-## 🤝 Hỗ Trợ
+1. Kiểm tra logs:
+   - Server logs sẽ hiển thị chi tiết request/response
+   - Tìm các dòng `[ERROR]` hoặc `[WARNING]`
 
-Nếu gặp vấn đề:
-1. Kiểm tra logs server
-2. Verify network connectivity
-3. Test với Postman collection trong `resources/`
-4. Tạo GitHub issue với error details
+2. Kiểm tra địa chỉ hợp lệ:
+   - Địa chỉ phải đủ chi tiết để geocoding thành công
+   - Thêm thành phố/quốc gia nếu cần
 
----
+### Traffic sections không có dữ liệu
 
-**Happy Routing! 🗺️**
+- Traffic data chỉ có sẵn tại các vị trí có sensor của TomTom
+- Một số tuyến đường có thể không có dữ liệu traffic real-time
+
+## 📝 Notes
+
+- Server sử dụng SQLite database để lưu trữ destinations tại `destinations.db`
+- Tất cả API calls đều có timeout 12 seconds
+- Logs được lưu với format JSON structure
+- Server hỗ trợ async/await cho tất cả operations
+
+## 🔗 Related Documentation
+
+- [Clean Architecture Usage Guide](CLEAN_ARCHITECTURE_USAGE_Instruction.md)
+- [FastMCP Client Setup](FASTMCP_CLIENT_SETUP_Instruction.md)
+- [Integrated Flow README](INTEGRATED_FLOW_README.md)

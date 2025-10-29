@@ -1,8 +1,7 @@
-
 # FastMCP Route Server — TomTom (Clean Architecture)
 
-A minimal **MCP** server using **FastMCP** exposing `calculate_route` via **TomTom Routing API**.
-- **Language:** Python 3.11+
+A **MCP** server using **FastMCP** for detailed route planning and destination management via **TomTom API**.
+- **Language:** Python 3.13+
 - **Run:** `uv` (fast Python package manager)
 - **OS:** Windows-friendly
 - **Architecture:** Clean Architecture (Domain → Application → Infrastructure → Interfaces) with Ports/Adapters, ACL, DI.
@@ -11,16 +10,16 @@ A minimal **MCP** server using **FastMCP** exposing `calculate_route` via **TomT
 ```powershell
 # 0) install uv if needed → https://docs.astral.sh/uv/getting-started/installation/
 uv sync
-uv run -m interfaces.mcp.server
+uv run python app/interfaces/mcp/server.py
 ```
 
 ### Configure your MCP client
 ```json
 {
   "mcpServers": {
-    "route-mcp": {
+    "tomtom-route-server": {
       "command": "uv",
-      "args": ["run", "-m", "interfaces.mcp.server"],
+      "args": ["run", "python", "D:/Project/Project gennerated by AI/fastmcp_route_tomtom_project/app/interfaces/mcp/server.py"],
       "env": {
         "TOMTOM_BASE_URL": "https://api.tomtom.com",
         "TOMTOM_API_KEY": "<YOUR_TOMTOM_KEY>",
@@ -31,131 +30,117 @@ uv run -m interfaces.mcp.server
 }
 ```
 
-### Use the tools
+## Available Tools
 
-#### 1. Calculate Route (with coordinates)
-Invoke `calculate_route` with:
-- `origin_lat`, `origin_lon`
-- `dest_lat`, `dest_lon`
-- `travel_mode` in `["car","bicycle","foot"]` (TomTom: `car` | `bicycle` | `pedestrian`)
+### 1. **get_detailed_route** ⭐ Primary Tool
 
-Example response:
-```json
-{
-  "summary": { "distance_m": 12345, "duration_s": 678 },
-  "sections": [
-    { "kind": "traffic:JAM", "start_index": 0, "end_index": 0 }
-  ]
-}
-```
+Get detailed route with turn-by-turn instructions and traffic information.
 
-#### 2. Check Traffic Between Addresses ⭐ NEW
-Invoke `check_traffic_between_addresses` with:
+**Parameters:**
 - `origin_address` (string): Starting address
-- `destination_address` (string): Destination address
-- `travel_mode` (string): Transportation mode (default: "car")
+- `destination_address` (string): Destination address  
+- `travel_mode` (string): "car", "bicycle", or "foot" (default: "car")
 - `country_set` (string): Country code (default: "VN")
+- `language` (string): Language (default: "vi-VN")
 
-Example usage:
+Example:
 ```python
-result = await check_traffic_between_addresses(
-    origin_address="Hồ Gươm, Hoàn Kiếm, Hà Nội",
-    destination_address="Chợ Bến Thành, Quận 1, TP.HCM",
+result = await get_detailed_route(
+    origin_address="Hồ Gươm, Hà Nội",
+    destination_address="Chợ Bến Thành, TP.HCM",
     travel_mode="car"
 )
 ```
 
-Example response:
+Response:
 ```json
 {
-  "origin": {
-    "address": "Hồ Gươm, Hoàn Kiếm, Hà Nội",
-    "coordinates": {"lat": 21.0285, "lon": 105.8542},
-    "geocoded_address": "Hồ Gươm, Phố Hàng Khay, Hoàn Kiếm, Hà Nội, Vietnam"
-  },
-  "destination": {
-    "address": "Chợ Bến Thành, Quận 1, TP.HCM",
-    "coordinates": {"lat": 10.7720, "lon": 106.6986},
-    "geocoded_address": "Chợ Bến Thành, Lê Lợi, Quận 1, TP.HCM, Vietnam"
-  },
-  "route_summary": {
-    "distance_meters": 1234567,
-    "duration_seconds": 45678,
-    "duration_traffic_seconds": 1234
-  },
-  "traffic_analysis": {
-    "overall_status": "HEAVY_TRAFFIC",
-    "traffic_score": 75.5,
-    "conditions_count": {
-      "FLOWING": 5,
-      "SLOW": 3,
-      "JAM": 2,
-      "CLOSED": 0,
-      "UNKNOWN": 0
+  "origin": {"address": "...", "lat": 21.0285, "lon": 105.8542},
+  "destination": {"address": "...", "lat": 10.7720, "lon": 106.6986},
+  "main_route": {
+    "total_distance_meters": 1234567,
+    "total_duration_seconds": 45678,
+    "traffic_condition": {
+      "description": "Traffic delays: 15 minutes",
+      "delay_minutes": 15
     },
-    "heavy_traffic_sections": [
-      {
-        "section_index": 2,
-        "condition": "JAM",
-        "start_index": 10,
-        "end_index": 15
-      }
-    ],
-    "total_sections": 10
-  },
-  "recommendations": [
-    "🚨 Tình trạng giao thông rất tệ - nên tránh tuyến đường này",
-    "⏰ Nên đi sớm hơn hoặc muộn hơn để tránh giờ cao điểm",
-    "🔄 Cân nhắc sử dụng phương tiện công cộng"
-  ]
+    "instructions": [...],
+    "sections": [...]
+  }
 }
 ```
 
+### 2-5. **Destination Management Tools**
+
+- `save_destination(name, address)` - Save a destination for later use
+- `list_destinations()` - List all saved destinations
+- `delete_destination(name?, address?)` - Delete a destination
+- `update_destination(destination_id, name?, address?)` - Update destination info
+
 ## Developer Notes
-- Port: `app/application/ports/routing_provider.py`
+
+### Architecture
+- **Domain Layer**: `app/domain/` - Entities, Value Objects, Enums
+- **Application Layer**: `app/application/` - Use Cases, DTOs, Ports
+- **Infrastructure Layer**: `app/infrastructure/` - Adapters (TomTom, SQLite)
+- **Interface Layer**: `app/interfaces/` - MCP Server
+
+### Key Files
+- Port (Interface): `app/application/ports/routing_provider.py`
 - Adapter (TomTom): `app/infrastructure/tomtom/adapters/routing_adapter.py`
 - ACL mapping: `app/infrastructure/tomtom/acl/mappers.py`
-- DI wiring: `app/di/container.py`
-- MCP server: `interfaces/mcp/server.py`
+- DI Container: `app/di/container.py`
+- MCP Server: `app/interfaces/mcp/server.py`
 
 ### Development Commands
 
-Using Makefile (recommended):
+Using uv:
 ```powershell
-make dev-install    # Install with dev dependencies
-make test          # Run tests
-make test-cov      # Run tests with coverage
-make lint          # Lint code
-make format        # Format code
-make type-check    # Type checking
-make check         # Run all checks
-make run           # Run MCP server
+uv sync --dev          # Install with dev dependencies
+uv run pytest         # Run tests
+uv run ruff check .   # Lint
+uv run ruff format .  # Format
+uv run mypy app       # Type check
 ```
 
-Or using uv directly:
-```powershell
-uv sync --dev      # Install with dev dependencies
-uv run pytest     # Run tests
-uv run ruff check . # Lint
-uv run ruff format . # Format
-uv run mypy app    # Type check
-```
-
-### Docker Support
-
-Build and run with Docker:
-```powershell
-docker build -t fastmcp-route-tomtom .
-docker run -e TOMTOM_API_KEY=your_key_here fastmcp-route-tomtom
-```
-
-### Env vars
-- `TOMTOM_BASE_URL` (default `https://api.tomtom.com`)
+### Environment Variables
+- `TOMTOM_BASE_URL` (default: `https://api.tomtom.com`)
 - `TOMTOM_API_KEY` (**required**)
-- `HTTP_TIMEOUT_SEC` (default 12)
-- `LOG_LEVEL` (default INFO)
+- `HTTP_TIMEOUT_SEC` (default: 12)
+- `LOG_LEVEL` (default: INFO)
+- `DATABASE_PATH` (default: `destinations.db`)
 
-### Windows debug tips
-- Bật venv: `.\.venv\Scriptsctivate` (uv tự quản lý env, nhưng tip hữu ích nếu cần)
-- Kiểm tra biến env trong PowerShell: `$env:TOMTOM_API_KEY`
-- Kết nối mạng/timeout: điều chỉnh `HTTP_TIMEOUT_SEC`
+### Windows Debug Tips
+- Check env var: `$env:TOMTOM_API_KEY`
+- Check port: `netstat -ano | findstr :8081`
+- View logs: Server logs show detailed request/response info
+
+## Testing
+
+### Unit Tests
+```powershell
+uv run pytest tests/unit/
+```
+
+### Integration Tests
+```powershell
+uv run pytest tests/integration/
+```
+
+### Test Coverage
+```powershell
+uv run pytest --cov=app tests/
+```
+
+## Clean Architecture Benefits
+
+1. **Testability**: Easy to mock dependencies and test in isolation
+2. **Maintainability**: Clear separation of concerns
+3. **Flexibility**: Easy to swap adapters (TomTom → Google Maps)
+4. **Scalability**: Add new use cases without affecting existing code
+
+## Related Documentation
+
+- [MCP Server Usage Guide](MCP_SERVER_USAGE_GUIDE_Instruction.md) - Detailed tool documentation
+- [Clean Architecture Usage](CLEAN_ARCHITECTURE_USAGE_Instruction.md) - Architecture guide
+- [FastMCP Client Setup](FASTMCP_CLIENT_SETUP_Instruction.md) - Client configuration

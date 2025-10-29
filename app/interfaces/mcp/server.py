@@ -14,7 +14,7 @@ import sys
 import uuid
 from dataclasses import asdict
 from pathlib import Path
-from typing import Literal, Union
+from typing import Literal
 
 # Add project root to Python path
 project_root = Path(__file__).parent.parent.parent.parent
@@ -24,41 +24,22 @@ sys.path.insert(0, str(project_root))
 from dotenv import load_dotenv
 load_dotenv()
 
-# Domain imports
-from app.domain.enums.travel_mode import TravelMode
-from app.domain.value_objects.latlon import LatLon
+# Domain imports (removed unused imports)
 
 # Application DTOs
-from app.application.dto.calculate_route_dto import CalculateRouteCommand
 from app.application.dto.detailed_route_dto import DetailedRouteRequest
-from app.application.dto.geocoding_dto import (
-    GeocodeAddressCommandDTO,
-    StructuredGeocodeCommandDTO,
-)
 from app.application.dto.save_destination_dto import SaveDestinationRequest
 from app.application.dto.search_destinations_dto import SearchDestinationsRequest
 from app.application.dto.delete_destination_dto import DeleteDestinationRequest
 from app.application.dto.update_destination_dto import UpdateDestinationRequest
-from app.application.dto.traffic_dto import (
-    AddressTrafficCommandDTO,
-    RouteWithTrafficCommandDTO,
-    TrafficAnalysisCommandDTO,
-    TrafficConditionCommandDTO,
-    ViaRouteCommandDTO,
-    TrafficCheckCommand,
-    ReverseGeocodeCommand,
-    TrafficSectionsCommand,
-)
 
 # DI Container
 from app.di.container import Container
-from app.application.use_cases.save_destination import SaveDestinationUseCase
 from fastmcp import FastMCP
 
 # Constants
-from app.domain.constants.api_constants import LanguageConstants, CountryConstants, LimitConstants, TravelModeConstants
-from app.application.constants.validation_constants import DefaultValues
-from app.interfaces.constants.mcp_constants import MCPServerConstants, MCPToolDescriptions, MCPErrorMessages, MCPSuccessMessages, MCPTypeConstants, MCPToolNames, MCPToolErrorMessages, MCPDestinationErrorMessages
+from app.domain.constants.api_constants import TravelModeConstants, CountryConstants, LanguageConstants
+from app.interfaces.constants.mcp_constants import MCPServerConstants, MCPToolDescriptions, MCPErrorMessages, MCPSuccessMessages, MCPToolNames, MCPToolErrorMessages
 
 # FastMCP instance
 mcp = FastMCP(MCPServerConstants.SERVER_NAME)
@@ -70,236 +51,6 @@ TravelModeLiteral = Literal["car", "bicycle", "foot"]
 _container = Container()
 
 # FastMCP tool definitions
-@mcp.tool(name=MCPToolNames.GEOCODE_ADDRESS)
-async def geocode_address_tool(
-    address: str,
-    country_set: str = CountryConstants.DEFAULT,
-    limit: int = LimitConstants.DEFAULT_GEOCODING_LIMIT,
-    language: str = LanguageConstants.DEFAULT
-) -> dict:
-    f"""{MCPToolDescriptions.GEOCODE_ADDRESS}"""
-    try:
-        # Sử dụng Use Case thay vì gọi trực tiếp API
-        cmd = GeocodeAddressCommandDTO(
-            address=address,
-            country_set=country_set,
-            limit=limit,
-            language=language
-        )
-        result = await _container.geocode_address.handle(cmd)
-        
-        # Chuyển đổi domain DTO thành dict cho MCP response
-        return {
-            "results": [{
-                "position": {"lat": r.position.lat, "lon": r.position.lon},
-                "address": asdict(r.address),
-                "confidence": r.confidence
-            } for r in result.results],
-            "summary": result.summary
-        }
-    except Exception as e:
-        return {"error": MCPToolErrorMessages.GEOCODING_FAILED.format(error=str(e))}
-
-@mcp.tool(name=MCPToolNames.GET_ROUTE_WITH_TRAFFIC)
-async def get_route_with_traffic_tool(
-    origin_lat: Union[str, float],
-    origin_lon: Union[str, float],
-    dest_lat: Union[str, float],
-    dest_lon: Union[str, float],
-    travel_mode: str = DefaultValues.DEFAULT_TRAVEL_MODE,
-    route_type: str = DefaultValues.DEFAULT_ROUTE_TYPE,
-    max_alternatives: int = DefaultValues.DEFAULT_MAX_ALTERNATIVES,
-    language: str = LanguageConstants.DEFAULT
-) -> dict:
-    f"""{MCPToolDescriptions.GET_ROUTE_WITH_TRAFFIC}"""
-    try:
-        # Sử dụng Route with Traffic Use Case
-        validation_service = _container.validation_service
-        cmd = RouteWithTrafficCommandDTO(
-            origin=LatLon(validation_service.safe_float_convert(origin_lat), validation_service.safe_float_convert(origin_lon)),
-            destination=LatLon(validation_service.safe_float_convert(dest_lat), validation_service.safe_float_convert(dest_lon)),
-            travel_mode=travel_mode,
-            route_type=route_type,
-            max_alternatives=max_alternatives,
-            language=language
-        )
-        
-        result = await _container.traffic_adapter.get_route_with_traffic(cmd)
-        
-        return {
-            "summary": asdict(result.summary),
-            "sections": [asdict(s) for s in result.sections],
-        }
-    except Exception as e:
-        return {"error": MCPToolErrorMessages.ROUTE_WITH_TRAFFIC_FAILED.format(error=str(e))}
-
-@mcp.tool(name=MCPToolNames.GET_INTERSECTION_POSITION)
-async def get_intersection_position_tool(
-    street_name: str,
-    cross_street: str,
-    municipality: str,
-    country_code: str = CountryConstants.DEFAULT,
-    limit: int = 1,
-    language: str = LanguageConstants.DEFAULT
-) -> dict:
-    f"""{MCPToolDescriptions.GET_INTERSECTION_POSITION}"""
-    try:
-        # Sử dụng Structured Geocoding Use Case
-        cmd = StructuredGeocodeCommandDTO(
-            street_name=street_name,
-            cross_street=cross_street,
-            municipality=municipality,
-            country_code=country_code,
-            limit=limit,
-            language=language
-        )
-        result = await _container.get_intersection_position.handle(cmd)
-        
-        # Chuyển đổi domain response
-        return {
-            "results": [{
-                "position": {"lat": r.position.lat, "lon": r.position.lon},
-                "address": asdict(r.address),
-                "confidence": r.confidence
-            } for r in result.results],
-            "summary": result.summary
-        }
-    except Exception as e:
-        return {"error": MCPToolErrorMessages.INTERSECTION_LOOKUP_FAILED.format(error=str(e))}
-
-@mcp.tool(name=MCPToolNames.GET_STREET_CENTER_POSITION)
-async def get_street_center_position_tool(
-    street_name: str,
-    country_set: str = CountryConstants.DEFAULT,
-    language: str = LanguageConstants.DEFAULT
-) -> dict:
-    f"""{MCPToolDescriptions.GET_STREET_CENTER_POSITION}"""
-    try:
-        # Sử dụng Street Center Use Case
-        result = await _container.get_street_center.handle(
-            street_name, country_set, language
-        )
-        
-        # Chuyển đổi domain response
-        return {
-            "results": [{
-                "position": {"lat": r.position.lat, "lon": r.position.lon},
-                "address": asdict(r.address),
-                "confidence": r.confidence
-            } for r in result.results],
-            "summary": result.summary
-        }
-    except Exception as e:
-        return {"error": MCPToolErrorMessages.STREET_CENTER_LOOKUP_FAILED.format(error=str(e))}
-
-@mcp.tool(name=MCPToolNames.GET_TRAFFIC_CONDITION)
-async def get_traffic_condition_tool(
-    latitude: Union[str, float],
-    longitude: Union[str, float],
-    zoom: int = LimitConstants.DEFAULT_TRAFFIC_ZOOM
-) -> dict:
-    f"""{MCPToolDescriptions.GET_TRAFFIC_CONDITION}"""
-    try:
-        # Chuyển đổi tọa độ và sử dụng Traffic Use Case
-        validation_service = _container.validation_service
-        location = LatLon(validation_service.safe_float_convert(latitude), validation_service.safe_float_convert(longitude))
-        cmd = TrafficConditionCommandDTO(location=location, zoom=zoom)
-        
-        result = await _container.get_traffic_condition.handle(cmd)
-        
-        # Chuyển đổi domain response
-        return {
-            "location": {"lat": result.location.lat, "lon": result.location.lon},
-            "flow_data": asdict(result.flow_data),
-            "road_closure": result.road_closure
-        }
-    except Exception as e:
-        return {"error": MCPToolErrorMessages.TRAFFIC_CONDITION_FAILED.format(error=str(e))}
-
-@mcp.tool(name=MCPToolNames.GET_VIA_ROUTE)
-async def get_via_route_tool(
-    origin_lat: Union[str, float],
-    origin_lon: Union[str, float],
-    via_lat: Union[str, float],
-    via_lon: Union[str, float],
-    dest_lat: Union[str, float],
-    dest_lon: Union[str, float],
-    travel_mode: str = DefaultValues.DEFAULT_TRAVEL_MODE,
-    language: str = LanguageConstants.DEFAULT
-) -> dict:
-    f"""{MCPToolDescriptions.GET_VIA_ROUTE}"""
-    try:
-        # Sử dụng Via Route Use Case
-        validation_service = _container.validation_service
-        cmd = ViaRouteCommandDTO(
-            origin=LatLon(validation_service.safe_float_convert(origin_lat), validation_service.safe_float_convert(origin_lon)),
-            via_point=LatLon(validation_service.safe_float_convert(via_lat), validation_service.safe_float_convert(via_lon)),
-            destination=LatLon(validation_service.safe_float_convert(dest_lat), validation_service.safe_float_convert(dest_lon)),
-            travel_mode=travel_mode,
-            language=language
-        )
-        
-        result = await _container.traffic_adapter.get_via_route(cmd)
-        
-        return {
-            "summary": asdict(result.summary),
-            "sections": [asdict(s) for s in result.sections],
-        }
-    except Exception as e:
-        return {"error": MCPToolErrorMessages.VIA_ROUTE_FAILED.format(error=str(e))}
-
-@mcp.tool(name=MCPToolNames.ANALYZE_ROUTE_TRAFFIC)
-async def analyze_route_traffic_tool(
-    origin_lat: Union[str, float],
-    origin_lon: Union[str, float],
-    dest_lat: Union[str, float],
-    dest_lon: Union[str, float],
-    language: str = LanguageConstants.DEFAULT
-) -> dict:
-    f"""{MCPToolDescriptions.ANALYZE_ROUTE_TRAFFIC}"""
-    try:
-        # Sử dụng Traffic Analysis Use Case
-        validation_service = _container.validation_service
-        cmd = TrafficAnalysisCommandDTO(
-            origin=LatLon(validation_service.safe_float_convert(origin_lat), validation_service.safe_float_convert(origin_lon)),
-            destination=LatLon(validation_service.safe_float_convert(dest_lat), validation_service.safe_float_convert(dest_lon)),
-            language=language
-        )
-        
-        result = await _container.analyze_route_traffic.handle(cmd)
-        
-        # Trả về domain DTO dưới dạng dict
-        return asdict(result)
-    except Exception as e:
-        return {"error": MCPToolErrorMessages.TRAFFIC_ANALYSIS_FAILED.format(error=str(e))}
-
-# Helper functions đã được thay thế bằng Use Cases trong Clean Architecture
-
-@mcp.tool(name=MCPToolNames.CHECK_TRAFFIC_BETWEEN_ADDRESSES)
-async def check_traffic_between_addresses_tool(
-    origin_address: str,
-    destination_address: str,
-    country_set: str = CountryConstants.DEFAULT,
-    travel_mode: str = TravelModeConstants.CAR,
-    language: str = LanguageConstants.DEFAULT
-) -> dict:
-    f"""{MCPToolDescriptions.CHECK_TRAFFIC_BETWEEN_ADDRESSES}"""
-    try:
-        # Sử dụng Address Traffic Use Case - composite use case
-        cmd = AddressTrafficCommandDTO(
-            origin_address=origin_address,
-            destination_address=destination_address,
-            country_set=country_set,
-            travel_mode=travel_mode,
-            language=language
-        )
-        
-        result = await _container.check_address_traffic.handle(cmd)
-        
-        # Trả về domain DTO dưới dạng dict
-        return asdict(result)
-    except Exception as e:
-        return {"error": MCPToolErrorMessages.ADDRESS_TRAFFIC_CHECK_FAILED.format(error=str(e))}
 
 @mcp.tool(name=MCPToolNames.SAVE_DESTINATION)
 async def save_destination_tool(
@@ -448,8 +199,10 @@ async def get_detailed_route_tool(
         if hasattr(result.main_route, 'sections') and result.main_route.sections:
             print(f"[TRAFFIC SECTIONS] Found {len(result.main_route.sections)} traffic sections:")
             for i, section in enumerate(result.main_route.sections[:3]):  # Show first 3 sections
-                print(f"   Section {i+1}: {section.get('start_address', 'Unknown')} -> {section.get('end_address', 'Unknown')}")
-                print(f"     Delay: {section.get('delay_seconds', 0)}s, Magnitude: {section.get('magnitude', 0)}")
+                # sections is a list of dicts
+                if isinstance(section, dict):
+                    print(f"   Section {i+1}: {section.get('start_address', 'Unknown')} -> {section.get('end_address', 'Unknown')}")
+                    print(f"     Delay: {section.get('delay_seconds', 0)}s, Magnitude: {section.get('magnitude', 0)}")
         
         if result.main_route.instructions:
             print(f"[INSTRUCTIONS] Instructions ({len(result.main_route.instructions)} steps):")
@@ -479,22 +232,16 @@ def main():
         print("Architecture: Clean Architecture với Use Cases & Ports/Adapters")
         print("Dependency Injection: Container pattern")
         
-        # Tool count
-        all_tools = (MCPServerConstants.ROUTING_TOOLS + 
-                    MCPServerConstants.GEOCODING_TOOLS + 
-                    MCPServerConstants.TRAFFIC_TOOLS + 
-                    MCPServerConstants.COMPOSITE_TOOLS +
-                    MCPServerConstants.DESTINATION_TOOLS)
+        # Available tools (only essential ones)
+        available_tools = [
+            "get_detailed_route",
+            "save_destination", 
+            "list_destinations",
+            "delete_destination",
+            "update_destination"
+        ]
         
-        print(f"Available tools ({len(all_tools)}):")
-        print(f"   • geocode_address - {MCPToolDescriptions.GEOCODE_ADDRESS}")
-        print(f"   • get_intersection_position - {MCPToolDescriptions.GET_INTERSECTION_POSITION}")
-        print(f"   • get_street_center_position - {MCPToolDescriptions.GET_STREET_CENTER_POSITION}")
-        print(f"   • get_traffic_condition - {MCPToolDescriptions.GET_TRAFFIC_CONDITION}")
-        print(f"   • get_route_with_traffic - {MCPToolDescriptions.GET_ROUTE_WITH_TRAFFIC}")
-        print(f"   • get_via_route - {MCPToolDescriptions.GET_VIA_ROUTE}")
-        print(f"   • analyze_route_traffic - {MCPToolDescriptions.ANALYZE_ROUTE_TRAFFIC}")
-        print(f"   • check_traffic_between_addresses - {MCPToolDescriptions.CHECK_TRAFFIC_BETWEEN_ADDRESSES}")
+        print(f"Available tools ({len(available_tools)}):")
         print(f"   • get_detailed_route - {MCPToolDescriptions.GET_DETAILED_ROUTE}")
         print(f"   • save_destination - {MCPToolDescriptions.SAVE_DESTINATION}")
         print(f"   • list_destinations - {MCPToolDescriptions.LIST_DESTINATIONS}")
