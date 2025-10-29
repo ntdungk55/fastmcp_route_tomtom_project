@@ -17,6 +17,9 @@ from app.application.use_cases.get_traffic_condition import GetTrafficCondition
 from app.application.use_cases.save_destination import SaveDestinationUseCase
 from app.application.use_cases.search_destinations import SearchDestinationsUseCase
 from app.application.use_cases.update_destination import UpdateDestinationUseCase
+from app.application.use_cases.check_traffic import CheckTrafficUseCase
+from app.application.use_cases.reverse_geocode import ReverseGeocodeUseCase
+from app.application.use_cases.process_traffic_sections import ProcessTrafficSectionsUseCase
 
 # Infrastructure
 from app.infrastructure.adapters.memory_destination_repository import MemoryDestinationRepository
@@ -28,6 +31,7 @@ from app.infrastructure.logging.logger import get_logger
 from app.infrastructure.tomtom.adapters.geocoding_adapter import TomTomGeocodingAdapter
 from app.infrastructure.tomtom.adapters.routing_adapter import TomTomRoutingAdapter
 from app.infrastructure.tomtom.adapters.traffic_adapter import TomTomTrafficAdapter
+from app.infrastructure.tomtom.adapters.reverse_geocode_adapter import TomTomReverseGeocodeAdapter
 
 # Services
 from app.application.services.validation_service import get_validation_service
@@ -98,6 +102,9 @@ class Container:
         
         # Traffic adapter (mới)
         self.traffic_adapter = TomTomTrafficAdapter(**base_config)
+        
+        # Reverse Geocode adapter (mới)
+        self.reverse_geocode_adapter = TomTomReverseGeocodeAdapter(**base_config)
     
     def _init_repositories(self):
         """Khởi tạo tất cả repositories."""
@@ -140,9 +147,16 @@ class Container:
             geocoding_provider=self.geocoding_adapter
         )
         
-        # Detailed Route Use Case (composite use case)
+        # Detailed Route Use Case (composite use case with traffic processing)
         self.get_detailed_route = GetDetailedRouteUseCase(
             destination_repository=self.destination_repository,
             geocoding_provider=self.geocoding_adapter,
-            routing_provider=self.routing_adapter
+            routing_provider=self.routing_adapter,
+            traffic_provider=self.traffic_adapter,
+            reverse_geocode_provider=self.reverse_geocode_adapter
         )
+        
+        # Traffic Processing Use Cases (mới)
+        self.check_traffic = CheckTrafficUseCase(self.traffic_adapter)
+        self.reverse_geocode = ReverseGeocodeUseCase(self.reverse_geocode_adapter)
+        self.process_traffic_sections = ProcessTrafficSectionsUseCase(self.reverse_geocode_adapter)

@@ -1,167 +1,130 @@
-"""TomTom Traffic Adapter - Triển khai traffic provider."""
+"""TomTom Traffic Adapter - Triển khai traffic checking cho BLK-1-15."""
 
-from app.application.dto.calculate_route_dto import RoutePlan
-from app.application.dto.traffic_dto import (
-    RouteWithTrafficCommandDTO,
-    TrafficAnalysisCommandDTO,
-    TrafficAnalysisResultDTO,
-    TrafficConditionCommandDTO,
-    TrafficConditionResultDTO,
-    ViaRouteCommandDTO,
-)
+from app.application.dto.traffic_dto import TrafficCheckCommand, TrafficResponse, TrafficSection
 from app.application.ports.traffic_provider import TrafficProvider
 from app.infrastructure.http.client import AsyncApiClient
 from app.infrastructure.http.http_method import HttpMethod
 from app.infrastructure.http.request_entity import RequestEntity
-from app.infrastructure.tomtom.acl.traffic_mapper import TomTomTrafficMapper
-from app.infrastructure.tomtom.endpoint import (
-    CALCULATE_ROUTE_PATH,
-    TRAFFIC_FLOW_PATH,
-)
+from app.infrastructure.logging.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class TomTomTrafficAdapter(TrafficProvider):
-    """Adapter TomTom cho traffic - xử lý thông tin giao thông.
+    """Adapter TomTom cho traffic checking - kiểm tra tình trạng giao thông.
     
-    Đầu vào: Các DTO commands cho traffic operations
-    Đầu ra: RoutePlan, TrafficConditionResultDTO, TrafficAnalysisResultDTO
-    Chức năng: Gọi TomTom Traffic APIs và chuyển đổi responses thành domain DTOs
+    Chức năng: Gọi TomTom Routing API với traffic=true để lấy thông tin giao thông
     """
     
-    def __init__(self, base_url: str, api_key: str, http: AsyncApiClient, timeout_sec: int = 12):
+    def __init__(self, base_url: str, api_key: str, http: AsyncApiClient, timeout_sec: int = 5):
         """Khởi tạo adapter với thông tin kết nối TomTom API."""
         self._base_url = base_url.rstrip("/")
         self._http = http
         self._timeout_sec = timeout_sec
         self._api_key = api_key
-        self._mapper = TomTomTrafficMapper()
-    
-    async def get_traffic_condition(self, cmd: TrafficConditionCommandDTO) -> TrafficConditionResultDTO:
-        """Lấy thông tin tình trạng giao thông tại một vị trí cụ thể.
+
+    async def check_severe_traffic(self, cmd: TrafficCheckCommand) -> TrafficResponse:
+        """Kiểm tra tình trạng giao thông nghiêm trọng trên tuyến đường.
         
-        Đầu vào: TrafficConditionCommandDTO (location, zoom)
-        Đầu ra: TrafficConditionResultDTO chứa thông tin lưu lượng giao thông
-        Xử lý: Gọi TomTom Traffic Flow API để lấy dữ liệu tốc độ và thời gian di chuyển
+        Args:
+            cmd: TrafficCheckCommand chứa thông tin tuyến đường cần kiểm tra
+            
+        Returns:
+            TrafficResponse với thông tin traffic sections và mức độ nghiêm trọng
         """
-        # Tạo đường dẫn API với mức zoom
-        path = TRAFFIC_FLOW_PATH.format(zoom=cmd.zoom)
-        
-        # Tạo HTTP request với tọa độ điểm cần kiểm tra
-        req = RequestEntity(
-            method=HttpMethod.GET,
-            url=f"{self._base_url}{path}",
-            headers={"Accept": "application/json"},
-            params={
-                "key": self._api_key,
-                "point": f"{cmd.location.lat},{cmd.location.lon}",
-            },
-            json=None,
-            timeout_sec=self._timeout_sec,
-        )
-        
-        # Gửi request và chuyển đổi response thành domain DTO
-        payload = await self._http.send(req)
-        return self._mapper.to_domain_traffic_condition(payload, cmd.location)
-    
-    async def get_route_with_traffic(self, cmd: RouteWithTrafficCommandDTO) -> RoutePlan:
-        """Tính toán tuyến đường có kèm thông tin giao thông.
-        
-        Đầu vào: RouteWithTrafficCommandDTO (origin, destination, travel_mode, etc.)
-        Đầu ra: RoutePlan chứa tuyến đường và thông tin traffic
-        Xử lý: Gọi TomTom Routing API với traffic=true để có thông tin giao thông realtime
-        """
-        # Chuyển đổi tọa độ thành format string cho TomTom API
-        origin = f"{cmd.origin.lat},{cmd.origin.lon}"
-        dest = f"{cmd.destination.lat},{cmd.destination.lon}"
-        path = CALCULATE_ROUTE_PATH.format(origin=origin, destination=dest)
-        
-        # Tạo request với đầy đủ tham số traffic
-        req = RequestEntity(
-            method=HttpMethod.GET,
-            url=f"{self._base_url}{path}",
-            headers={"Accept": "application/json"},
-            params={
-                "key": self._api_key,
-                "traffic": "true",  # Bật thông tin giao thông realtime
-                "sectionType": "traffic",  # Chia route thành sections theo traffic
-                "instructionsType": "text",  # Lấy hướng dẫn dạng text
-                "language": cmd.language,
-                "maxAlternatives": str(cmd.max_alternatives),
-                "travelMode": cmd.travel_mode,
-                "routeType": cmd.route_type,
-            },
-            json=None,
-            timeout_sec=self._timeout_sec,
-        )
-        
-        # Gửi request và chuyển đổi response thành RoutePlan
-        payload = await self._http.send(req)
-        return self._mapper.to_domain_route_plan(payload)
-    
-    async def get_via_route(self, cmd: ViaRouteCommandDTO) -> RoutePlan:
-        """Tính toán tuyến đường qua điểm trung gian (A → B → C).
-        
-        Đầu vào: ViaRouteCommandDTO (origin, via_point, destination, travel_mode)
-        Đầu ra: RoutePlan chứa tuyến đường qua điểm trung gian
-        Xử lý: Gọi TomTom Routing API với format origin:via:destination
-        """
-        # Chuyển đổi các tọa độ thành format string
-        origin = f"{cmd.origin.lat},{cmd.origin.lon}"
-        via = f"{cmd.via_point.lat},{cmd.via_point.lon}"
-        dest = f"{cmd.destination.lat},{cmd.destination.lon}"
-        
-        # TomTom via route format: origin:via:destination
-        path = f"/routing/1/calculateRoute/{origin}:{via}:{dest}/json"
-        
-        # Tạo request cho via route
-        req = RequestEntity(
-            method=HttpMethod.GET,
-            url=f"{self._base_url}{path}",
-            headers={"Accept": "application/json"},
-            params={
-                "key": self._api_key,
-                "traffic": "true",  # Bao gồm thông tin giao thông
-                "sectionType": "traffic",
-                "instructionsType": "text",
-                "language": cmd.language,
-                "travelMode": cmd.travel_mode,
-            },
-            json=None,
-            timeout_sec=self._timeout_sec,
-        )
-        
-        # Gửi request và chuyển đổi response
-        payload = await self._http.send(req)
-        return self._mapper.to_domain_route_plan(payload)
-    
-    async def analyze_route_traffic(self, cmd: TrafficAnalysisCommandDTO) -> TrafficAnalysisResultDTO:
-        """Phân tích tình trạng giao thông trên tuyến đường.
-        
-        Đầu vào: TrafficAnalysisCommandDTO (origin, destination, language)
-        Đầu ra: TrafficAnalysisResultDTO chứa phân tích chi tiết về traffic
-        Xử lý: Gọi TomTom API, phân tích traffic sections và tạo recommendations
-        """
-        # Chuyển đổi tọa độ và tạo đường dẫn API
-        origin = f"{cmd.origin.lat},{cmd.origin.lon}"
-        dest = f"{cmd.destination.lat},{cmd.destination.lon}"
-        path = CALCULATE_ROUTE_PATH.format(origin=origin, destination=dest)
-        
-        # Tạo request với focus vào traffic analysis
-        req = RequestEntity(
-            method=HttpMethod.GET,
-            url=f"{self._base_url}{path}",
-            headers={"Accept": "application/json"},
-            params={
-                "key": self._api_key,
-                "traffic": "true",  # Bắt buộc để có traffic data
-                "sectionType": "traffic",  # Chia nhỏ route theo traffic conditions
-                "instructionsType": "text",
-                "language": cmd.language,
-            },
-            json=None,
-            timeout_sec=self._timeout_sec,
-        )
-        
-        # Gửi request và phân tích traffic qua mapper
-        payload = await self._http.send(req)
-        return self._mapper.to_domain_traffic_analysis(payload)
+        logger.info(f"Checking severe traffic for route: {cmd.origin} -> {cmd.destination}")
+        try:
+            # Chuyển đổi tọa độ thành format string cho TomTom API
+            origin = f"{cmd.origin.lat},{cmd.origin.lon}"
+            dest = f"{cmd.destination.lat},{cmd.destination.lon}"
+            path = f"/routing/1/calculateRoute/{origin}:{dest}/json"
+            
+            # Tạo HTTP request với các tham số traffic
+            req = RequestEntity(
+                method=HttpMethod.GET,
+                url=f"{self._base_url}{path}",
+                headers={"Accept": "application/json"},
+                params={
+                    "key": self._api_key,
+                    "traffic": "true",
+                    "sectionType": "traffic",
+                    "instructionsType": "text",
+                    "language": cmd.language,
+                    "travelMode": cmd.travel_mode,
+                },
+                json=None,
+                timeout_sec=self._timeout_sec,
+            )
+            
+            # Gửi request và xử lý response
+            logger.debug(f"Sending traffic check request to: {req.url}")
+            payload = await self._http.send(req)
+            logger.debug(f"Received traffic response with {len(payload.get('routes', []))} routes")
+            
+            result = self._parse_traffic_response(payload)
+            logger.info(f"Traffic check completed: {len(result.traffic_sections)} sections found, {result.total_delay_seconds}s total delay")
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error checking traffic: {e}", exc_info=True)
+            return TrafficResponse(
+                success=False,
+                traffic_sections=[],
+                total_delay_seconds=0,
+                total_traffic_length_meters=0,
+                error_message=f"Traffic check failed: {str(e)}"
+            )
+
+    def _parse_traffic_response(self, payload: dict) -> TrafficResponse:
+        """Parse TomTom traffic response thành TrafficResponse."""
+        try:
+            routes = payload.get("routes", [])
+            if not routes:
+                return TrafficResponse(
+                    success=True,
+                    traffic_sections=[],
+                    total_delay_seconds=0,
+                    total_traffic_length_meters=0
+                )
+            
+            route = routes[0]
+            summary = route.get("summary", {})
+            sections = route.get("sections", [])
+            
+            # Trích xuất traffic sections
+            traffic_sections = []
+            total_delay = 0
+            total_traffic_length = 0
+            
+            for section in sections:
+                if section.get("sectionType") == "TRAFFIC":
+                    traffic_section = TrafficSection(
+                        section_type=section.get("sectionType", ""),
+                        start_point_index=section.get("startPointIndex", 0),
+                        end_point_index=section.get("endPointIndex", 0),
+                        simple_category=section.get("simpleCategory", ""),
+                        effective_speed_kmh=section.get("effectiveSpeedInKmh", 0.0),
+                        delay_seconds=section.get("delayInSeconds", 0),
+                        magnitude_of_delay=section.get("magnitudeOfDelay", 0),
+                        event_id=section.get("eventId")
+                    )
+                    traffic_sections.append(traffic_section)
+                    total_delay += traffic_section.delay_seconds
+                    total_traffic_length += section.get("lengthInMeters", 0)
+            
+            return TrafficResponse(
+                success=True,
+                traffic_sections=traffic_sections,
+                total_delay_seconds=total_delay,
+                total_traffic_length_meters=total_traffic_length
+            )
+            
+        except Exception as e:
+            logger.error(f"Error parsing traffic response: {e}")
+            return TrafficResponse(
+                success=False,
+                traffic_sections=[],
+                total_delay_seconds=0,
+                total_traffic_length_meters=0,
+                error_message=f"Failed to parse response: {e}"
+            )

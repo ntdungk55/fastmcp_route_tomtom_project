@@ -45,6 +45,9 @@ from app.application.dto.traffic_dto import (
     TrafficAnalysisCommandDTO,
     TrafficConditionCommandDTO,
     ViaRouteCommandDTO,
+    TrafficCheckCommand,
+    ReverseGeocodeCommand,
+    TrafficSectionsCommand,
 )
 
 # DI Container
@@ -434,12 +437,19 @@ async def get_detailed_route_tool(
         
         result = await _container.get_detailed_route.execute(request)
         
-        # Log the result
+        # Log the result with traffic information
         print(f"\n[ROUTE] Detailed Route: {origin_address} -> {destination_address}")
         print(f"[TRAVEL] Travel Mode: {result.travel_mode}")
         print(f"[DISTANCE] Distance: {result.main_route.total_distance_meters}m")
         print(f"[DURATION] Duration: {result.main_route.total_duration_seconds}s")
         print(f"[TRAFFIC] Traffic: {result.main_route.traffic_condition.description if result.main_route.traffic_condition else 'N/A'}")
+        
+        # Show traffic sections if available
+        if hasattr(result.main_route, 'sections') and result.main_route.sections:
+            print(f"[TRAFFIC SECTIONS] Found {len(result.main_route.sections)} traffic sections:")
+            for i, section in enumerate(result.main_route.sections[:3]):  # Show first 3 sections
+                print(f"   Section {i+1}: {section.get('start_address', 'Unknown')} -> {section.get('end_address', 'Unknown')}")
+                print(f"     Delay: {section.get('delay_seconds', 0)}s, Magnitude: {section.get('magnitude', 0)}")
         
         if result.main_route.instructions:
             print(f"[INSTRUCTIONS] Instructions ({len(result.main_route.instructions)} steps):")

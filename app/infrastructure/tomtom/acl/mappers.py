@@ -76,20 +76,19 @@ class TomTomMapper:
             guidance=RouteGuidance(instructions=instructions)
         )
     
-    def to_domain_route_plan_with_guidance(self, payload: dict) -> dict:
-        """Chuyển đổi TomTom routing response thành dict với guidance chi tiết.
+    def to_domain_route_plan_with_guidance(self, payload: dict) -> RoutePlan:
+        """Chuyển đổi TomTom routing response thành RoutePlan với guidance chi tiết.
         
         Đầu vào: dict - Raw response từ TomTom Routing API
-        Đầu ra: dict - Route plan với guidance và instructions
+        Đầu ra: RoutePlan - Route plan với guidance và instructions chi tiết
         """
         routes = payload.get("routes", [])
         if not routes:
-            return {
-                "summary": {"distance_m": 0, "duration_s": 0},
-                "sections": [],
-                "guidance": {"instructions": []},
-                "legs": []
-            }
+            return RoutePlan(
+                summary=RouteSummary(0, 0), 
+                sections=[], 
+                guidance=RouteGuidance(instructions=[])
+            )
         
         route = routes[0]
         summary_data = route.get("summary", {})
@@ -216,17 +215,33 @@ class TomTomMapper:
                 "duration_s": leg.get("travelTimeInSeconds", 0)
             })
         
-        return {
-            "summary": {
-                "distance_m": int(summary_data.get("lengthInMeters", 0)),
-                "duration_s": int(summary_data.get("travelTimeInSeconds", 0))
-            },
-            "sections": sections,
-            "guidance": {
-                "instructions": processed_instructions
-            },
-            "legs": processed_legs
-        }
+        # Chuyển đổi processed_instructions thành RouteInstruction objects
+        route_instructions = []
+        for inst in processed_instructions:
+            route_instructions.append(RouteInstruction(
+                step=inst.get("step", 1),
+                message=inst.get("instruction", ""),
+                distance_in_meters=inst.get("distance_m", 0),
+                duration_in_seconds=inst.get("duration_s", 0)
+            ))
+        
+        # Chuyển đổi sections thành RouteSection objects
+        route_sections = []
+        for sec in sections:
+            route_sections.append(RouteSection(
+                kind=sec.get("kind", ""),
+                start_index=sec.get("start_index", 0),
+                end_index=sec.get("end_index", 0)
+            ))
+        
+        return RoutePlan(
+            summary=RouteSummary(
+                distance=int(summary_data.get("lengthInMeters", 0)),
+                duration=int(summary_data.get("travelTimeInSeconds", 0))
+            ),
+            sections=route_sections,
+            guidance=RouteGuidance(instructions=route_instructions)
+        )
     
     def _get_instruction_from_maneuver(self, maneuver: str, road_name: str = "") -> str:
         """Tạo instruction text từ maneuver type với tên đường."""

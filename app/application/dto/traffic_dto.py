@@ -1,101 +1,175 @@
-"""DTOs for traffic operations."""
+"""DTOs cho Traffic Processing feature."""
 
 from dataclasses import dataclass
-from typing import Optional, Union
-
+from typing import List, Optional
 from app.domain.value_objects.latlon import LatLon
-from app.domain.constants.api_constants import TravelModeConstants, RouteTypeConstants, LanguageConstants, CountryConstants
 
 
-@dataclass(frozen=True)
+@dataclass
+class TrafficCheckCommand:
+    """Command để kiểm tra tình trạng giao thông."""
+    origin: LatLon
+    destination: LatLon
+    travel_mode: str = "car"
+    language: str = "vi-VN"
+
+
+@dataclass
+class TrafficSection:
+    """Thông tin một đoạn đường có giao thông tắc đường."""
+    section_type: str
+    start_point_index: int
+    end_point_index: int
+    simple_category: str
+    effective_speed_kmh: float
+    delay_seconds: int
+    magnitude_of_delay: int
+    event_id: Optional[str] = None
+
+
+@dataclass
+class TrafficResponse:
+    """Response từ traffic checking service."""
+    success: bool
+    traffic_sections: List[TrafficSection]
+    total_delay_seconds: int
+    total_traffic_length_meters: int
+    error_message: Optional[str] = None
+
+
+@dataclass
+class ReverseGeocodeCommand:
+    """Command để reverse geocode coordinates."""
+    coordinates: List[LatLon]
+    language: str = "vi-VN"
+
+
+@dataclass
+class GeocodedAddress:
+    """Địa chỉ đã được geocode."""
+    coordinate: LatLon
+    address: str
+    freeform_address: str
+
+
+@dataclass
+class ReverseGeocodeResponse:
+    """Response từ reverse geocoding service."""
+    success: bool
+    addresses: List[GeocodedAddress]
+    error_message: Optional[str] = None
+
+
+@dataclass
+class TrafficSectionsCommand:
+    """Command để xử lý traffic sections."""
+    route_data: dict
+    request_context: dict
+
+
+@dataclass
+class JamPair:
+    """Cặp điểm bắt đầu và kết thúc của đoạn tắc đường."""
+    section_index: int
+    start: LatLon
+    end: LatLon
+    start_address: str
+    end_address: str
+
+
+@dataclass
+class TrafficSectionsResponse:
+    """Response từ traffic sections processing."""
+    success: bool
+    jam_pairs: List[JamPair]
+    route_summary: dict
+    guidance: dict
+    metadata: dict
+    error_message: Optional[str] = None
+
+
+# DTOs for existing traffic-related tools
+@dataclass
+class AddressTrafficCommandDTO:
+    """Command để check traffic giữa hai địa chỉ."""
+    origin_address: str
+    destination_address: str
+    country_set: str = "VN"
+    travel_mode: str = "car"
+    language: str = "vi-VN"
+
+
+@dataclass
+class AddressTrafficResultDTO:
+    """Result từ address traffic check."""
+    origin: dict
+    destination: dict
+    traffic_analysis: dict
+
+
+@dataclass
+class RouteWithTrafficCommandDTO:
+    """Command để lấy route với traffic."""
+    origin: LatLon
+    destination: LatLon
+    travel_mode: str = "car"
+    route_type: str = "fastest"
+    max_alternatives: int = 0
+    language: str = "vi-VN"
+
+
+@dataclass
+class TrafficAnalysisCommandDTO:
+    """Command để analyze traffic trên route."""
+    origin: LatLon
+    destination: LatLon
+    language: str = "vi-VN"
+
+
+@dataclass
 class TrafficConditionCommandDTO:
-    """Command to get traffic condition at a location."""
+    """Command để lấy traffic condition tại location."""
     location: LatLon
     zoom: int = 10
 
 
-@dataclass(frozen=True)
-class TrafficFlowDataDTO:
-    """Traffic flow information."""
-    current_speed: Optional[float] = None
-    free_flow_speed: Optional[float] = None
-    current_travel_time: Optional[int] = None
-    free_flow_travel_time: Optional[int] = None
-    confidence: Optional[float] = None
-
-
-@dataclass(frozen=True)
-class TrafficConditionResultDTO:
-    """Result of traffic condition query."""
-    location: LatLon
-    flow_data: TrafficFlowDataDTO
-    road_closure: Optional[bool] = None
-
-
-@dataclass(frozen=True)
-class RouteWithTrafficCommandDTO:
-    """Command to get route with traffic information."""
-    origin: LatLon
-    destination: LatLon
-    travel_mode: str = TravelModeConstants.MOTORCYCLE
-    route_type: str = RouteTypeConstants.FASTEST
-    max_alternatives: int = 1
-    language: str = LanguageConstants.DEFAULT
-
-
-@dataclass(frozen=True)
+@dataclass
 class ViaRouteCommandDTO:
-    """Command to calculate route via intermediate point."""
+    """Command để lấy route đi qua via point."""
     origin: LatLon
     via_point: LatLon
     destination: LatLon
-    travel_mode: str = TravelModeConstants.MOTORCYCLE
-    language: str = LanguageConstants.DEFAULT
+    travel_mode: str = "car"
+    language: str = "vi-VN"
 
 
-@dataclass(frozen=True)
-class TrafficAnalysisCommandDTO:
-    """Command to analyze traffic on a route."""
-    origin: LatLon
-    destination: LatLon
-    language: str = LanguageConstants.DEFAULT
+@dataclass
+class TrafficAnalysisResultDTO:
+    """Result từ traffic analysis."""
+    route_summary: dict
+    traffic_data: dict
+    severe_delays: List[dict]
+    recommendations: List[str]
 
 
-@dataclass(frozen=True)
-class TrafficSectionDTO:
-    """Traffic information for a route section."""
-    section_index: int
-    condition: str  # FLOWING, SLOW, JAM, CLOSED, UNKNOWN
+@dataclass
+class TrafficConditionResultDTO:
+    """Result từ traffic condition check."""
+    location: LatLon
+    flow_data: dict
+    road_closure: bool
+
+
+@dataclass
+class RouteSummary:
+    """Route summary."""
+    distance_m: int
+    duration_s: int
+
+
+@dataclass
+class RouteSection:
+    """Route section."""
+    kind: str
     start_index: int
     end_index: int
-    delay_seconds: Optional[int] = None
-
-
-@dataclass(frozen=True)
-class TrafficAnalysisResultDTO:
-    """Result of traffic analysis."""
-    overall_status: str  # LIGHT_TRAFFIC, MODERATE_TRAFFIC, HEAVY_TRAFFIC
-    traffic_score: float  # 0-100, higher = worse traffic
-    conditions_count: dict[str, int]
-    heavy_traffic_sections: list[TrafficSectionDTO]
-    total_sections: int
-    recommendations: list[str]
-
-
-@dataclass(frozen=True)
-class AddressTrafficCommandDTO:
-    """Command to check traffic between two addresses."""
-    origin_address: str
-    destination_address: str
-    country_set: str = CountryConstants.DEFAULT
-    travel_mode: str = TravelModeConstants.CAR
-    language: str = LanguageConstants.DEFAULT
-
-
-@dataclass(frozen=True)
-class AddressTrafficResultDTO:
-    """Result of address-to-address traffic check."""
-    origin_info: dict
-    destination_info: dict
-    route_summary: dict
-    traffic_analysis: TrafficAnalysisResultDTO

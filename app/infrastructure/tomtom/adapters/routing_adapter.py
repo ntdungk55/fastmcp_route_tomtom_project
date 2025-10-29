@@ -58,11 +58,11 @@ class TomTomRoutingAdapter(RoutingProvider):
         payload = await self._http.send(req)
         return self._mapper.to_domain_route_plan(payload)
     
-    async def calculate_route_with_guidance(self, cmd: CalculateRouteCommand) -> dict:
+    async def calculate_route_with_guidance(self, cmd: CalculateRouteCommand) -> RoutePlan:
         """Tính toán tuyến đường với guidance chi tiết.
         
         Đầu vào: CalculateRouteCommand chứa điểm đi, điểm đến, phương tiện
-        Đầu ra: dict - Route plan với guidance và instructions chi tiết
+        Đầu ra: RoutePlan - Route plan với guidance và instructions chi tiết
         Xử lý: Gọi TomTom Routing API với guidance=true để có hướng dẫn chi tiết
         """
         # Chuyển đổi tọa độ thành format string cho TomTom API
@@ -90,6 +90,6 @@ class TomTomRoutingAdapter(RoutingProvider):
             timeout_sec=self._timeout_sec,
         )
         
-        # Gửi request và chuyển đổi response thành dict với guidance
+        # Gửi request và chuyển đổi response thành RoutePlan với guidance
         payload = await self._http.send(req)
         return self._mapper.to_domain_route_plan_with_guidance(payload)

@@ -17,6 +17,9 @@ from app.application.errors import ApplicationError
 from app.application.ports.destination_repository import DestinationRepository
 from app.application.ports.geocoding_provider import GeocodingProvider
 from app.application.ports.routing_provider import RoutingProvider
+from app.application.ports.traffic_provider import TrafficProvider
+from app.application.ports.reverse_geocode_provider import ReverseGeocodeProvider
+from app.application.dto.traffic_dto import TrafficCheckCommand, ReverseGeocodeCommand, TrafficSectionsCommand
 from app.domain.enums.travel_mode import TravelMode
 from app.infrastructure.logging.logger import get_logger
 
@@ -30,11 +33,15 @@ class GetDetailedRouteUseCase:
         self,
         destination_repository: DestinationRepository,
         geocoding_provider: GeocodingProvider,
-        routing_provider: RoutingProvider
+        routing_provider: RoutingProvider,
+        traffic_provider: TrafficProvider,
+        reverse_geocode_provider: ReverseGeocodeProvider
     ):
         self._destination_repository = destination_repository
         self._geocoding_provider = geocoding_provider
         self._routing_provider = routing_provider
+        self._traffic_provider = traffic_provider
+        self._reverse_geocode_provider = reverse_geocode_provider
     
     async def execute(self, request: DetailedRouteRequest) -> DetailedRouteResponse:
         """Execute detailed route calculation."""
@@ -67,7 +74,23 @@ class GetDetailedRouteUseCase:
             # Use calculate_route_with_guidance to get turn-by-turn instructions
             route_plan = await self._routing_provider.calculate_route_with_guidance(route_cmd)
             
-            # Step 4: Build response
+            # Step 4: Check traffic conditions (BLK-1-15)
+            logger.info("Checking traffic conditions")
+            traffic_cmd = TrafficCheckCommand(
+                origin=origin_coords,
+                destination=dest_coords,
+                travel_mode=request.travel_mode,
+                language=request.language
+            )
+            traffic_response = await self._traffic_provider.check_severe_traffic(traffic_cmd)
+            
+            # Step 5: Process traffic sections if found (BLK-1-16, BLK-1-17)
+            jam_pairs = []
+            if traffic_response.success and traffic_response.traffic_sections:
+                logger.info(f"Found {len(traffic_response.traffic_sections)} traffic sections, processing...")
+                jam_pairs = await self._process_traffic_sections(route_plan, traffic_response.traffic_sections)
+            
+            # Step 6: Build response
             origin_point = RoutePoint(
                 address=request.origin_address,
                 name=str(origin_name) if origin_name else None,
@@ -82,17 +105,26 @@ class GetDetailedRouteUseCase:
                 lon=dest_coords.lon
             )
             
-            # Build main route from route plan
+            # Build main route from route plan with traffic info
+            traffic_description = "Normal traffic"
+            delay_minutes = 0
+            if traffic_response.success:
+                delay_minutes = traffic_response.total_delay_seconds // 60
+                if traffic_response.traffic_sections:
+                    traffic_description = f"Traffic delays: {delay_minutes} minutes, {len(traffic_response.traffic_sections)} sections affected"
+                else:
+                    traffic_description = "No traffic delays"
+            
             main_route = MainRoute(
                 summary=f"Route via {request.travel_mode}",
                 total_distance_meters=route_plan.summary.distance_m,
                 total_duration_seconds=route_plan.summary.duration_s,
                 traffic_condition=TrafficCondition(
-                    description="Normal traffic",
-                    delay_minutes=0
+                    description=traffic_description,
+                    delay_minutes=delay_minutes
                 ),
                 instructions=self._extract_instructions(route_plan),
-                sections=[]
+                sections=self._build_traffic_sections(route_plan, jam_pairs)
             )
             
             # Build alternative routes if available
@@ -171,3 +203,82 @@ class GetDetailedRouteUseCase:
         # Placeholder for alternative routes extraction
         # Can be extended based on routing provider response structure
         return alternatives
+    
+    async def _process_traffic_sections(self, route_plan, traffic_sections) -> list:
+        """Process traffic sections and create jam pairs (BLK-1-16, BLK-1-17)."""
+        try:
+            # Extract coordinates for reverse geocoding
+            coordinates = []
+            for section in traffic_sections:
+                # Get start and end coordinates from route plan
+                start_idx = section.start_point_index
+                end_idx = section.end_point_index
+                
+                # Add coordinates (simplified - would need actual route points)
+                if hasattr(route_plan, 'guidance') and hasattr(route_plan.guidance, 'instructions'):
+                    instructions = route_plan.guidance.instructions
+                    if start_idx < len(instructions):
+                        start_inst = instructions[start_idx]
+                        if hasattr(start_inst, 'point'):
+                            coordinates.append(start_inst.point)
+                    if end_idx < len(instructions):
+                        end_inst = instructions[end_idx]
+                        if hasattr(end_inst, 'point'):
+                            coordinates.append(end_inst.point)
+            
+            if not coordinates:
+                logger.warning("No coordinates found for traffic sections")
+                return []
+            
+            # Reverse geocode coordinates
+            geocode_cmd = ReverseGeocodeCommand(
+                coordinates=coordinates,
+                language="vi-VN"
+            )
+            
+            geocode_response = await self._reverse_geocode_provider.reverse_geocode(geocode_cmd)
+            
+            if not geocode_response.success:
+                logger.warning(f"Reverse geocoding failed: {geocode_response.error_message}")
+                return []
+            
+            # Create jam pairs
+            jam_pairs = []
+            for i, section in enumerate(traffic_sections):
+                if i * 2 + 1 < len(geocode_response.addresses):
+                    start_addr = geocode_response.addresses[i * 2]
+                    end_addr = geocode_response.addresses[i * 2 + 1]
+                    
+                    jam_pairs.append({
+                        "section_index": i,
+                        "start": {"lat": start_addr.coordinate.lat, "lon": start_addr.coordinate.lon},
+                        "end": {"lat": end_addr.coordinate.lat, "lon": end_addr.coordinate.lon},
+                        "start_address": start_addr.address,
+                        "end_address": end_addr.address,
+                        "delay_seconds": section.delay_seconds,
+                        "magnitude": section.magnitude_of_delay
+                    })
+            
+            logger.info(f"Created {len(jam_pairs)} jam pairs")
+            return jam_pairs
+            
+        except Exception as e:
+            logger.error(f"Error processing traffic sections: {e}")
+            return []
+    
+    def _build_traffic_sections(self, route_plan, jam_pairs) -> list:
+        """Build traffic sections for the route."""
+        sections = []
+        for jam_pair in jam_pairs:
+            sections.append({
+                "type": "traffic",
+                "start_address": jam_pair["start_address"],
+                "end_address": jam_pair["end_address"],
+                "delay_seconds": jam_pair["delay_seconds"],
+                "magnitude": jam_pair["magnitude"],
+                "coordinates": {
+                    "start": jam_pair["start"],
+                    "end": jam_pair["end"]
+                }
+            })
+        return sections

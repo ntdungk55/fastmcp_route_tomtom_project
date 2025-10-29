@@ -12,7 +12,7 @@ class MCPServerConstants:
     DESCRIPTION = "TomTom Route MCP Server with Clean Architecture"
     
     # Default server settings
-    DEFAULT_HOST = "192.168.1.7"
+    DEFAULT_HOST = "192.168.1.2"
     DEFAULT_PORT = 8081
     DEFAULT_TRANSPORT = "streamable-http"
     

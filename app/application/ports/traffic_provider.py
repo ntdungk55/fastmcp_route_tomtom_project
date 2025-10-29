@@ -1,33 +1,22 @@
-"""Port for traffic operations."""
+"""Traffic Provider Port - Interface cho traffic checking services."""
 
 from typing import Protocol
-
-from app.application.dto.calculate_route_dto import RoutePlan
-from app.application.dto.traffic_dto import (
-    RouteWithTrafficCommandDTO,
-    TrafficAnalysisCommandDTO,
-    TrafficAnalysisResultDTO,
-    TrafficConditionCommandDTO,
-    TrafficConditionResultDTO,
-    ViaRouteCommandDTO,
-)
+from app.application.dto.traffic_dto import TrafficCheckCommand, TrafficResponse
 
 
 class TrafficProvider(Protocol):
-    """Port for traffic-related operations."""
+    """Interface cho traffic checking services.
     
-    async def get_traffic_condition(self, cmd: TrafficConditionCommandDTO) -> TrafficConditionResultDTO:
-        """Get traffic condition at a specific location."""
-        ...
+    Chức năng: Kiểm tra tình trạng giao thông trên tuyến đường
+    """
     
-    async def get_route_with_traffic(self, cmd: RouteWithTrafficCommandDTO) -> RoutePlan:
-        """Get route with traffic information."""
-        ...
-    
-    async def get_via_route(self, cmd: ViaRouteCommandDTO) -> RoutePlan:
-        """Calculate route via intermediate point."""
-        ...
-    
-    async def analyze_route_traffic(self, cmd: TrafficAnalysisCommandDTO) -> TrafficAnalysisResultDTO:
-        """Analyze traffic conditions on a route."""
+    async def check_severe_traffic(self, cmd: TrafficCheckCommand) -> TrafficResponse:
+        """Kiểm tra tình trạng giao thông nghiêm trọng trên tuyến đường.
+        
+        Args:
+            cmd: TrafficCheckCommand chứa thông tin tuyến đường cần kiểm tra
+            
+        Returns:
+            TrafficResponse với thông tin traffic sections và mức độ nghiêm trọng
+        """
         ...
