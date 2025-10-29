@@ -63,8 +63,8 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="uIDS3wccJZhUk2PKrjNr-31" value="Luồng xử lý" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
-          <mxGeometry x="210" y="-450" width="90" height="30" as="geometry" />
+        <mxCell id="uIDS3wccJZhUk2PKrjNr-31" value="Luồng xử&amp;nbsp;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+          <mxGeometry x="215" y="-450" width="80" height="30" as="geometry" />
         </mxCell>
         <mxCell id="uIDS3wccJZhUk2PKrjNr-32" value="" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" parent="1" vertex="1">
           <mxGeometry x="460" y="-720" width="120" height="60" as="geometry" />
@@ -311,22 +311,22 @@
         <mxCell id="FCjt_oDBSo6wO21uyZac-3" value="false" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
           <mxGeometry x="620" y="457" width="50" height="30" as="geometry" />
         </mxCell>
-        <mxCell id="lIrC-M6Bulr5mNNMFuHY-19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="lIrC-M6Bulr5mNNMFuHY-10" target="uIDS3wccJZhUk2PKrjNr-69">
+        <mxCell id="lIrC-M6Bulr5mNNMFuHY-19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="lIrC-M6Bulr5mNNMFuHY-10" target="uIDS3wccJZhUk2PKrjNr-69" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="lIrC-M6Bulr5mNNMFuHY-10" value="dịch vụ tomtom API- calculateRoute" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxCell id="lIrC-M6Bulr5mNNMFuHY-10" value="dịch vụ tomtom API- calculateRoute" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="900" y="70" width="120" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="lIrC-M6Bulr5mNNMFuHY-11" value="" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxCell id="lIrC-M6Bulr5mNNMFuHY-11" value="" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="480" y="-390" width="120" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="lIrC-M6Bulr5mNNMFuHY-12" value="Dịch vụ bên ngoài&amp;nbsp;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" vertex="1" parent="1">
+        <mxCell id="lIrC-M6Bulr5mNNMFuHY-12" value="Dịch vụ bên ngoài&amp;nbsp;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" parent="1" vertex="1">
           <mxGeometry x="640" y="-360" width="120" height="30" as="geometry" />
         </mxCell>
-        <mxCell id="lIrC-M6Bulr5mNNMFuHY-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="uIDS3wccJZhUk2PKrjNr-69" target="uIDS3wccJZhUk2PKrjNr-89">
+        <mxCell id="lIrC-M6Bulr5mNNMFuHY-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="uIDS3wccJZhUk2PKrjNr-69" target="uIDS3wccJZhUk2PKrjNr-89" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="lIrC-M6Bulr5mNNMFuHY-22" value="&lt;span style=&quot;color: rgb(153, 76, 0); font-family: Helvetica; font-size: 8px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: center; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: nowrap; background-color: rgb(236, 236, 236); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; display: inline !important; float: none;&quot;&gt;BLK-1-15&lt;/span&gt;" style="text;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxCell id="lIrC-M6Bulr5mNNMFuHY-22" value="&lt;span style=&quot;color: rgb(153, 76, 0); font-family: Helvetica; font-size: 8px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: center; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: nowrap; background-color: rgb(236, 236, 236); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; display: inline !important; float: none;&quot;&gt;BLK-1-15&lt;/span&gt;" style="text;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="920" y="50" width="40" height="30" as="geometry" />
         </mxCell>
       </root>

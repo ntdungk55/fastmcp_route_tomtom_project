@@ -10,6 +10,7 @@ Mục tiêu: Cập nhật kết quả (success hoặc error) vào bảng request
 
 - **Sự kiện kích hoạt (Trigger):**
   - [x] Gọi sau BLK-1-12 (success case - có route data)
+  - [x] **Cập nhật:** Gọi sau BLK-1-17 (success case - có traffic sections với addresses)
   - [x] Gọi sau BLK-1-06 hoặc BLK-1-03 (error cases - đã xử lý lỗi)
   - [x] Trước khi return response về user (final step)
   - [ ] Message/Event đến
@@ -32,7 +33,7 @@ Mục tiêu: Cập nhật kết quả (success hoặc error) vào bảng request
 
 ### 2.1 Input
 
-**Case 1: Success result**
+**Case 1: Success result (từ BLK-1-12 hoặc BLK-1-17)**
 ```python
 {
   "request_id": str,
@@ -45,6 +46,13 @@ Mục tiêu: Cập nhật kết quả (success hoặc error) vào bảng request
       "traffic_delay_seconds": int
     },
     # ... other success data
+    # **Cập nhật:** Nếu từ BLK-1-17, sẽ có thêm:
+    "traffic_sections_with_addresses": [{
+      "section_index": int,
+      "start_address": str,
+      "end_address": str,
+      "section_type": str
+    }] | null
   },
   "metadata": {
     "api_provider": str,
@@ -78,8 +86,8 @@ Mục tiêu: Cập nhật kết quả (success hoặc error) vào bảng request
   - Timestamp (completed_at hoặc failed_at)
 
 - **Nguồn:**
-  - Success: từ BLK-1-12 (TransformSuccessDataForAI)
-  - Error: từ BLK-1-03, BLK-1-06, BLK-1-11
+  - Success: từ BLK-1-16 (ProcessTrafficSections orchestrator) hoặc BLK-1-12 (TransformSuccessDataForAI)
+  - Error: từ BLK-1-16 (error path), BLK-1-03, BLK-1-06, BLK-1-11
 
 - **Bảo mật:**
   - Sanitize error messages (không lưu stack traces chi tiết)
@@ -203,7 +211,76 @@ INFO: Updated request history for req-123: SUCCESS (duration: 15000ms)
 
 ---
 
-### Case 2: Update error result (user error)
+### Case 2: Update success result từ BLK-1-17 (có traffic addresses)
+**Input:**
+```python
+{
+  "request_id": "req-124",
+  "status": "SUCCESS",
+  "result": {
+    "type": "ROUTE_SUCCESS",
+    "summary": {
+      "distance_km": 5.0,
+      "duration_seconds": 600,
+      "traffic_delay_seconds": 120
+    },
+    "traffic_sections_with_addresses": [
+      {
+        "section_index": 0,
+        "start_address": "Phố Huế, Hoàn Kiếm, Hà Nội",
+        "end_address": "Phố Huế, Hoàn Kiếm, Hà Nội",
+        "section_type": "TRAFFIC"
+      }
+    ]
+  },
+  "metadata": {
+    "api_provider": "tomtom",
+    "api_duration_ms": 2500,
+    "total_duration_ms": 18000,
+    "completed_at": "2025-10-14T10:30:15Z"
+  }
+}
+```
+
+**DB Operation:**
+```sql
+UPDATE request_history 
+SET 
+  status = 'SUCCESS',
+  completed_at = '2025-10-14T10:30:15Z',
+  duration_ms = 18000,
+  result_summary = '{
+    "distance_km": 5.0,
+    "duration_seconds": 600,
+    "traffic_delay_seconds": 120,
+    "api_provider": "tomtom",
+    "traffic_sections_count": 1,
+    "traffic_sections": [
+      {
+        "section_index": 0,
+        "start_address": "Phố Huế, Hoàn Kiếm, Hà Nội",
+        "end_address": "Phố Huế, Hoàn Kiếm, Hà Nội",
+        "section_type": "TRAFFIC"
+      }
+    ]
+  }',
+  error_code = NULL,
+  updated_at = NOW()
+WHERE request_id = 'req-124';
+```
+
+**Output:**
+```python
+{
+  "updated": True,
+  "request_id": "req-124",
+  "final_status": "SUCCESS"
+}
+```
+
+---
+
+### Case 3: Update error result (user error)
 **Input:**
 ```python
 {
@@ -248,7 +325,7 @@ WHERE request_id = 'req-456';
 
 ---
 
-### Case 3: Update error result (system error)
+### Case 4: Update error result (system error)
 **Input:**
 ```python
 {
@@ -284,7 +361,7 @@ WHERE request_id = 'req-789';
 
 ---
 
-### Case 4: Update fails (DB timeout)
+### Case 5: Update fails (DB timeout)
 **Error:**
 ```
 DBConnectionTimeout: Connection pool exhausted
@@ -370,7 +447,8 @@ GROUP BY tool_name;
 - **Diagram:** `prompt/specs/diagrams/routing mcp server diagram.drawio` - Database icon "cập nhật kết quả lịch sử request"
 - **Related Blocks:**
   - ← BLK-1-07-SaveRequestHistory (created initial record)
-  - ← BLK-1-12-TransformSuccessDataForAI (success result)
+  - ← BLK-1-16-ProcessTrafficSections (success aggregate with jam_pairs)
+  - ← BLK-1-12-TransformSuccessDataForAI (alternative success)
   - ← BLK-1-03, BLK-1-06, BLK-1-11 (error results)
   - → BLK-End (final step before response)
 - **Related Code:**

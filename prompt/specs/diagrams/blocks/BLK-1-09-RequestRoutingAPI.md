@@ -130,6 +130,7 @@ Mục tiêu: Gọi API TomTom (hoặc routing provider khác) để tính toán 
   - Log API call (duration, status)
   - Increment API usage metrics
   - Consume API quota
+  - **Output sẽ được xử lý bởi BLK-1-16 để extract traffic sections**
 
 - **Đảm bảo (Guarantees):**
   - Retry on transient failures (5xx, timeouts)
@@ -271,6 +272,8 @@ GET https://api.tomtom.com/routing/1/calculateRoute/21.0285,105.8542:10.8231,106
   }
 }
 ```
+
+**Next:** → BLK-1-16 (ProcessTrafficSections) để xử lý legs và sections
 
 ### Case 2: API timeout (retry success)
 **Attempt 1:** Timeout after 10s
@@ -582,6 +585,7 @@ END FUNCTION
 - **Related Blocks:**
   - ← BLK-1-04-CheckDestinationExists (có thể dùng cached coords)
   - ← BLK-1-08-SaveDestination (sau khi save)
+  - → BLK-1-16-ProcessTrafficSections (xử lý legs và sections để extract traffic coordinates)
   - → BLK-1-10-CheckAPISuccess (check response)
 - **Related Code:**
   - `app/infrastructure/tomtom/routing_gateway.py` - TomTom API client

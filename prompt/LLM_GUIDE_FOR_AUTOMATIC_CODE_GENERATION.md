@@ -71,7 +71,7 @@ Developer quyết định (dựa trên report)
 Phase 2: LLM EXECUTE
    → Check feedback.md (from prompt/review/developer/feedback.md) ngăn lỗi trong quá trình gen code
    → Gen code
-   → WAIT for user review
+   → Tự kiểm tra lại xem đã tuân thủ prompt/architecture/ và đúng logic chuẩn các file prompt/specs/ 
 ```
 
 ---

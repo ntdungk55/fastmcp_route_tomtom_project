@@ -11,12 +11,13 @@ Mục tiêu: Phân loại lỗi từ API response (BLK-1-10 failed path) và for
 - **Sự kiện kích hoạt (Trigger):**
   - [x] Gọi từ BLK-1-10 khi `api_success = False`
   - [x] Chuyên xử lý errors từ external API (TomTom routing)
+  - [x] **Cập nhật:** Nhận lỗi từ BLK-1-16 (orchestrator) bao gồm lỗi do BLK-1-17 trả về
   - [ ] Message/Event đến
   - [ ] Lịch/Timer
   - [ ] Webhook/Callback
 
 - **Điều kiện tiền đề (Preconditions):**
-  - Có API error object từ BLK-1-10
+  - Có API/error object từ BLK-1-10 hoặc từ BLK-1-16 (đóng vai trò aggregator lỗi BLK-1-17)
   - Error chưa được format cho user
 
 - **Điều kiện dừng/không chạy (Guards):**
@@ -50,7 +51,9 @@ Mục tiêu: Phân loại lỗi từ API response (BLK-1-10 failed path) và for
   - `error.code` hoặc `error.status_code`
   - `error.message`
 
-- **Nguồn:** BLK-1-10 (CheckAPISuccess - failed path)
+- **Nguồn:** 
+  - BLK-1-10 (CheckAPISuccess - failed path)
+  - BLK-1-16 (ProcessTrafficSections orchestrator - failed path, bao gồm lỗi từ BLK-1-17)
 
 - **Bảo mật:**
   - Không lộ internal API details (keys, endpoints)
@@ -305,7 +308,7 @@ Mục tiêu: Phân loại lỗi từ API response (BLK-1-10 failed path) và for
 
 ---
 
-## 5) Classification Rules (API Errors)
+## 5) Classification Rules (API Errors + New Blocks)
 
 ### User Errors → USER_ERROR
 | HTTP Status | API Error Code | User Message | Hint |
@@ -315,6 +318,9 @@ Mục tiêu: Phân loại lỗi từ API response (BLK-1-10 failed path) và for
 | 404 | NO_ROUTE_FOUND | Không tìm thấy tuyến đường | Thử điểm khác hoặc phương tiện khác |
 | 403 | FORBIDDEN | Không có quyền truy cập | Liên hệ admin |
 | 422 | UNPROCESSABLE_ENTITY | Dữ liệu không xử lý được | Kiểm tra lại tham số |
+| - | INVALID_ROUTE_DATA | Dữ liệu tuyến đường không hợp lệ | Thử lại với tuyến đường khác |
+| - | INVALID_POINT_INDEX | Chỉ số điểm không hợp lệ | Dữ liệu tuyến đường bị lỗi |
+| - | INVALID_COORDINATES | Toạ độ không hợp lệ | Kiểm tra lại toạ độ |
 
 ### System Errors → SYSTEM_ERROR
 | HTTP Status | API Error Code | Internal Message | User Message |
@@ -325,6 +331,10 @@ Mục tiêu: Phân loại lỗi từ API response (BLK-1-10 failed path) và for
 | 504 | GATEWAY_TIMEOUT | API gateway timeout | Yêu cầu quá lâu, thử lại |
 | 0 | TIMEOUT | Request timeout | Yêu cầu mất quá nhiều thời gian |
 | 429 | RATE_LIMIT | API quota exceeded | Dịch vụ tạm thời quá tải |
+| - | API_KEY_NOT_CONFIGURED | API key chưa được cấu hình | Hệ thống chưa được thiết lập |
+| - | API_KEY_INVALID | API key không hợp lệ | Hệ thống chưa được thiết lập |
+| - | API_KEY_UNAUTHORIZED | API key không có quyền | Hệ thống chưa được thiết lập |
+| - | SERVICE_UNAVAILABLE | Dịch vụ không khả dụng | Dịch vụ tạm thời không khả dụng |
 
 ---
 
@@ -332,6 +342,8 @@ Mục tiêu: Phân loại lỗi từ API response (BLK-1-10 failed path) và for
 - **Diagram:** `prompt/specs/diagrams/routing mcp server diagram.drawio` - Block "phân loại và xử lý output trả dữ liệu phù hợp cho AI"
 - **Related Blocks:**
   - ← BLK-1-10-CheckAPISuccess (trigger khi API fail)
+  - ← BLK-1-16-ProcessTrafficSections (trigger khi process fail)
+  - ← BLK-1-17-ReverseGeocodeAPI (trigger khi geocode fail)
   - → BLK-1-06-HandleSystemError (nếu SYSTEM_ERROR)
   - → Return to user (nếu USER_ERROR)
   - (Alternative: merge với BLK-1-05-ClassifyErrorType)
