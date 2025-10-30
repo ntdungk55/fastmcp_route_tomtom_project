@@ -9,6 +9,7 @@ from app.application.dto.detailed_route_dto import (
     AlternativeRoute,
     RouteInstruction,
     TrafficCondition,
+    RouteSection,
 )
 from app.application.dto.geocoding_dto import GeocodeAddressCommandDTO
 from app.application.dto.calculate_route_dto import CalculateRouteCommand
@@ -19,8 +20,9 @@ from app.application.ports.geocoding_provider import GeocodingProvider
 from app.application.ports.routing_provider import RoutingProvider
 from app.application.ports.traffic_provider import TrafficProvider
 from app.application.ports.reverse_geocode_provider import ReverseGeocodeProvider
-from app.application.dto.traffic_dto import TrafficCheckCommand, ReverseGeocodeCommand, TrafficSectionsCommand
+from app.application.dto.traffic_dto import TrafficCheckCommand, ReverseGeocodeCommand
 from app.domain.enums.travel_mode import TravelMode
+from app.domain.value_objects.latlon import LatLon
 from app.infrastructure.logging.logger import get_logger
 
 logger = get_logger(__name__)
@@ -93,11 +95,97 @@ class GetDetailedRouteUseCase:
                 if traffic_response.traffic_sections:
                     logger.info(f"  - First section: {traffic_response.traffic_sections[0]}")
             
-            # Step 5: Process traffic sections if found (BLK-1-16, BLK-1-17)
-            jam_pairs = []
+            # Step 5: Build traffic sections with address information (BLK-1-16, BLK-1-17)
+            traffic_sections_data = []
             if traffic_response.success and traffic_response.traffic_sections:
-                logger.info(f"Found {len(traffic_response.traffic_sections)} traffic sections, processing...")
-                jam_pairs = await self._process_traffic_sections(route_plan, traffic_response.traffic_sections)
+                logger.info(f"Found {len(traffic_response.traffic_sections)} traffic sections")
+                
+                # Get route legs points for coordinate mapping
+                if route_plan.legs and len(route_plan.legs) > 0:
+                    leg_points = route_plan.legs[0].points
+                    logger.info(f"Route has {len(leg_points)} points for coordinate mapping")
+                    
+                    # Collect all coordinates that need reverse geocoding
+                    coords_to_geocode = []
+                    for section in traffic_response.traffic_sections:
+                        start_idx = section.start_point_index
+                        end_idx = section.end_point_index
+                        
+                        # Validate indices
+                        if start_idx < len(leg_points) and end_idx < len(leg_points):
+                            start_coord = leg_points[start_idx]
+                            end_coord = leg_points[end_idx]
+                            coords_to_geocode.extend([start_coord, end_coord])
+                    
+                    # Batch reverse geocode all coordinates
+                    if coords_to_geocode:
+                        logger.info(f"Reverse geocoding {len(coords_to_geocode)} coordinates")
+                        geocode_cmd = ReverseGeocodeCommand(
+                            coordinates=coords_to_geocode,
+                            language=request.language
+                        )
+                        geocode_response = await self._reverse_geocode_provider.reverse_geocode(geocode_cmd)
+                        
+                        if geocode_response.success:
+                            logger.info(f"Successfully geocoded {len(geocode_response.addresses)} addresses")
+                            
+                            # Build traffic sections with addresses
+                            addr_idx = 0
+                            for idx, section in enumerate(traffic_response.traffic_sections):
+                                start_idx = section.start_point_index
+                                end_idx = section.end_point_index
+                                
+                                if start_idx < len(leg_points) and end_idx < len(leg_points):
+                                    start_coord = leg_points[start_idx]
+                                    end_coord = leg_points[end_idx]
+                                    
+                                    # Get addresses from geocode response
+                                    start_address = geocode_response.addresses[addr_idx].freeform_address if addr_idx < len(geocode_response.addresses) else "Địa chỉ không xác định"
+                                    end_address = geocode_response.addresses[addr_idx + 1].freeform_address if (addr_idx + 1) < len(geocode_response.addresses) else "Địa chỉ không xác định"
+                                    addr_idx += 2
+                                    
+                                    traffic_sections_data.append(RouteSection(
+                                        section_index=idx,
+                                        section_type="traffic",
+                                        start_point_index=start_idx,
+                                        end_point_index=end_idx,
+                                        start_coordinate={"lat": start_coord.lat, "lon": start_coord.lon},
+                                        end_coordinate={"lat": end_coord.lat, "lon": end_coord.lon},
+                                        start_address=start_address,
+                                        end_address=end_address,
+                                        delay_seconds=section.delay_seconds,
+                                        magnitude=section.magnitude_of_delay,
+                                        simple_category=section.simple_category,
+                                        effective_speed_kmh=section.effective_speed_kmh
+                                    ))
+                            logger.info(f"Built {len(traffic_sections_data)} traffic sections with addresses")
+                        else:
+                            logger.warning(f"Reverse geocoding failed: {geocode_response.error_message}")
+                            # Fallback: build sections without addresses
+                            for idx, section in enumerate(traffic_response.traffic_sections):
+                                start_idx = section.start_point_index
+                                end_idx = section.end_point_index
+                                
+                                if start_idx < len(leg_points) and end_idx < len(leg_points):
+                                    start_coord = leg_points[start_idx]
+                                    end_coord = leg_points[end_idx]
+                                    
+                                    traffic_sections_data.append(RouteSection(
+                                        section_index=idx,
+                                        section_type="traffic",
+                                        start_point_index=start_idx,
+                                        end_point_index=end_idx,
+                                        start_coordinate={"lat": start_coord.lat, "lon": start_coord.lon},
+                                        end_coordinate={"lat": end_coord.lat, "lon": end_coord.lon},
+                                        start_address="Địa chỉ không xác định",
+                                        end_address="Địa chỉ không xác định",
+                                        delay_seconds=section.delay_seconds,
+                                        magnitude=section.magnitude_of_delay,
+                                        simple_category=section.simple_category,
+                                        effective_speed_kmh=section.effective_speed_kmh
+                                    ))
+                else:
+                    logger.warning("No leg points available for coordinate mapping")
             else:
                 logger.warning("No traffic sections found in response")
             
@@ -126,11 +214,11 @@ class GetDetailedRouteUseCase:
                 else:
                     traffic_description = "No traffic delays"
             
-            # DEBUG: Log jam pairs before building sections
+            # DEBUG: Log traffic sections before building response
             logger.info(f"🏗️ BUILDING TRAFFIC SECTIONS:")
-            logger.info(f"  - Jam pairs count: {len(jam_pairs)}")
-            if jam_pairs:
-                logger.info(f"  - First jam pair: {jam_pairs[0]}")
+            logger.info(f"  - Traffic sections count: {len(traffic_sections_data)}")
+            if traffic_sections_data:
+                logger.info(f"  - First section: {traffic_sections_data[0]}")
             
             main_route = MainRoute(
                 summary=f"Route via {request.travel_mode}",
@@ -141,7 +229,7 @@ class GetDetailedRouteUseCase:
                     delay_minutes=delay_minutes
                 ),
                 instructions=self._extract_instructions(route_plan),
-                sections=self._build_traffic_sections(route_plan, jam_pairs)
+                sections=traffic_sections_data  # Use traffic sections directly
             )
             
             # DEBUG: Log final sections
@@ -227,81 +315,3 @@ class GetDetailedRouteUseCase:
         # Can be extended based on routing provider response structure
         return alternatives
     
-    async def _process_traffic_sections(self, route_plan, traffic_sections) -> list:
-        """Process traffic sections and create jam pairs (BLK-1-16, BLK-1-17)."""
-        try:
-            # Extract coordinates for reverse geocoding
-            coordinates = []
-            for section in traffic_sections:
-                # Get start and end coordinates from route plan
-                start_idx = section.start_point_index
-                end_idx = section.end_point_index
-                
-                # Add coordinates (simplified - would need actual route points)
-                if hasattr(route_plan, 'guidance') and hasattr(route_plan.guidance, 'instructions'):
-                    instructions = route_plan.guidance.instructions
-                    if start_idx < len(instructions):
-                        start_inst = instructions[start_idx]
-                        if hasattr(start_inst, 'point'):
-                            coordinates.append(start_inst.point)
-                    if end_idx < len(instructions):
-                        end_inst = instructions[end_idx]
-                        if hasattr(end_inst, 'point'):
-                            coordinates.append(end_inst.point)
-            
-            if not coordinates:
-                logger.warning("No coordinates found for traffic sections")
-                return []
-            
-            # Reverse geocode coordinates
-            geocode_cmd = ReverseGeocodeCommand(
-                coordinates=coordinates,
-                language="vi-VN"
-            )
-            
-            geocode_response = await self._reverse_geocode_provider.reverse_geocode(geocode_cmd)
-            
-            if not geocode_response.success:
-                logger.warning(f"Reverse geocoding failed: {geocode_response.error_message}")
-                return []
-            
-            # Create jam pairs
-            jam_pairs = []
-            for i, section in enumerate(traffic_sections):
-                if i * 2 + 1 < len(geocode_response.addresses):
-                    start_addr = geocode_response.addresses[i * 2]
-                    end_addr = geocode_response.addresses[i * 2 + 1]
-                    
-                    jam_pairs.append({
-                        "section_index": i,
-                        "start": {"lat": start_addr.coordinate.lat, "lon": start_addr.coordinate.lon},
-                        "end": {"lat": end_addr.coordinate.lat, "lon": end_addr.coordinate.lon},
-                        "start_address": start_addr.address,
-                        "end_address": end_addr.address,
-                        "delay_seconds": section.delay_seconds,
-                        "magnitude": section.magnitude_of_delay
-                    })
-            
-            logger.info(f"Created {len(jam_pairs)} jam pairs")
-            return jam_pairs
-            
-        except Exception as e:
-            logger.error(f"Error processing traffic sections: {e}")
-            return []
-    
-    def _build_traffic_sections(self, route_plan, jam_pairs) -> list:
-        """Build traffic sections for the route."""
-        sections = []
-        for jam_pair in jam_pairs:
-            sections.append({
-                "type": "traffic",
-                "start_address": jam_pair["start_address"],
-                "end_address": jam_pair["end_address"],
-                "delay_seconds": jam_pair["delay_seconds"],
-                "magnitude": jam_pair["magnitude"],
-                "coordinates": {
-                    "start": jam_pair["start"],
-                    "end": jam_pair["end"]
-                }
-            })
-        return sections

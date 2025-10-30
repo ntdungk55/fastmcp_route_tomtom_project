@@ -1,5 +1,6 @@
 
 from dataclasses import dataclass, field
+from typing import List
 
 from app.domain.enums.travel_mode import TravelMode
 from app.domain.value_objects.latlon import LatLon
@@ -30,6 +31,11 @@ class RouteGuidance:
     instructions: list[RouteInstruction] = field(default_factory=list)
 
 @dataclass(frozen=True)
+class RouteLeg:
+    """A leg of the route with points."""
+    points: List[LatLon] = field(default_factory=list)
+
+@dataclass(frozen=True)
 class CalculateRouteCommand:
     origin: LatLon
     destination: LatLon
@@ -41,3 +47,4 @@ class RoutePlan:
     summary: RouteSummary
     sections: list[RouteSection]
     guidance: RouteGuidance = field(default_factory=lambda: RouteGuidance(instructions=[]))
+    legs: List[RouteLeg] = field(default_factory=list)

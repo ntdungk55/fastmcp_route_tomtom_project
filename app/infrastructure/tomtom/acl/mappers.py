@@ -1,6 +1,7 @@
 """TomTom Routing ACL Mapper - Chuyển đổi dữ liệu routing cơ bản."""
 
-from app.application.dto.calculate_route_dto import RoutePlan, RouteSection, RouteSummary, RouteGuidance, RouteInstruction
+from app.application.dto.calculate_route_dto import RoutePlan, RouteSection, RouteSummary, RouteGuidance, RouteInstruction, RouteLeg
+from app.domain.value_objects.latlon import LatLon
 from app.infrastructure.logging.logger import get_logger
 
 logger = get_logger(__name__)
@@ -23,7 +24,7 @@ class TomTomMapper:
         if not routes:
             # Trả về RoutePlan rỗng nếu không có route
             logger.warning("No routes found in TomTom response")
-            return RoutePlan(summary=RouteSummary(distance_m=0, duration_s=0), sections=[], guidance=RouteGuidance(instructions=[]))
+            return RoutePlan(summary=RouteSummary(distance_m=0, duration_s=0), sections=[], guidance=RouteGuidance(instructions=[]), legs=[])
         
         # Lấy route đầu tiên (tốt nhất)
         r0 = routes[0]
@@ -47,6 +48,19 @@ class TomTomMapper:
             
             # Tạo RouteSection và thêm vào danh sách
             sections.append(RouteSection(kind=kind, start_index=0, end_index=0))
+
+        # Extract legs with points (BLK-1-16 requirement)
+        legs_list = []
+        legs_data = r0.get("legs", [])
+        logger.info(f"DEBUG: Found {len(legs_data)} legs in route")
+        for leg_data in legs_data:
+            points_data = leg_data.get("points", [])
+            logger.info(f"DEBUG: Leg has {len(points_data)} points")
+            points = [
+                LatLon(lat=p.get("latitude", 0), lon=p.get("longitude", 0))
+                for p in points_data
+            ]
+            legs_list.append(RouteLeg(points=points))
 
         # DEBUG: Log guidance data
         guidance_data = r0.get("guidance", {})
@@ -73,7 +87,8 @@ class TomTomMapper:
         return RoutePlan(
             summary=RouteSummary(distance_m=distance, duration_s=duration), 
             sections=sections,
-            guidance=RouteGuidance(instructions=instructions)
+            guidance=RouteGuidance(instructions=instructions),
+            legs=legs_list
         )
     
     def to_domain_route_plan_with_guidance(self, payload: dict) -> RoutePlan:
@@ -87,7 +102,8 @@ class TomTomMapper:
             return RoutePlan(
                 summary=RouteSummary(distance_m=0, duration_s=0), 
                 sections=[], 
-                guidance=RouteGuidance(instructions=[])
+                guidance=RouteGuidance(instructions=[]),
+                legs=[]
             )
         
         route = routes[0]
@@ -234,13 +250,24 @@ class TomTomMapper:
                 end_index=sec.get("end_index", 0)
             ))
         
+        # Extract legs with points (BLK-1-16 requirement)
+        legs_list = []
+        for leg_data in legs:
+            points_data = leg_data.get("points", [])
+            points = [
+                LatLon(lat=p.get("latitude", 0), lon=p.get("longitude", 0))
+                for p in points_data
+            ]
+            legs_list.append(RouteLeg(points=points))
+        
         return RoutePlan(
             summary=RouteSummary(
                 distance_m=int(summary_data.get("lengthInMeters", 0)),
                 duration_s=int(summary_data.get("travelTimeInSeconds", 0))
             ),
             sections=route_sections,
-            guidance=RouteGuidance(instructions=route_instructions)
+            guidance=RouteGuidance(instructions=route_instructions),
+            legs=legs_list
         )
     
     def _get_instruction_from_maneuver(self, maneuver: str, road_name: str = "") -> str:

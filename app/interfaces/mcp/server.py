@@ -178,14 +178,11 @@ async def get_detailed_route_tool(
 ) -> dict:
     f"""{MCPToolDescriptions.GET_DETAILED_ROUTE}"""
     try:
-        # Convert motorcycle to car (TomTom API doesn't have separate motorcycle mode)
-        actual_mode = "car" if travel_mode == "motorcycle" else travel_mode
-        
         # Sử dụng Get Detailed Route Use Case
         request = DetailedRouteRequest(
             origin_address=origin_address,
             destination_address=destination_address,
-            travel_mode=actual_mode,
+            travel_mode=travel_mode,
             country_set=country_set,
             language=language
         )
@@ -203,10 +200,9 @@ async def get_detailed_route_tool(
         if hasattr(result.main_route, 'sections') and result.main_route.sections:
             print(f"[TRAFFIC SECTIONS] Found {len(result.main_route.sections)} traffic sections:")
             for i, section in enumerate(result.main_route.sections[:3]):  # Show first 3 sections
-                # sections is a list of dicts
-                if isinstance(section, dict):
-                    print(f"   Section {i+1}: {section.get('start_address', 'Unknown')} -> {section.get('end_address', 'Unknown')}")
-                    print(f"     Delay: {section.get('delay_seconds', 0)}s, Magnitude: {section.get('magnitude', 0)}")
+                # sections is a list of RouteSection objects
+                print(f"   Section {i+1}: {section.start_address} -> {section.end_address}")
+                print(f"     Delay: {section.delay_seconds}s, Magnitude: {section.magnitude}, Category: {section.simple_category}")
         
         if result.main_route.instructions:
             print(f"[INSTRUCTIONS] Instructions ({len(result.main_route.instructions)} steps):")

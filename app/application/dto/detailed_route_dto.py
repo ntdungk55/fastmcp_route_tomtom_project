@@ -44,10 +44,29 @@ class RouteInstruction:
 
 @dataclass
 class RouteSection:
-    """A section of the route with traffic info."""
+    """A section of the route with traffic info and human-readable addresses."""
+    section_index: int
+    section_type: str  # "traffic", "normal", etc.
+    
+    # Point indices for reference
     start_point_index: int
     end_point_index: int
-    section_type: str
+    
+    # Coordinates
+    start_coordinate: dict  # {"lat": float, "lon": float}
+    end_coordinate: dict    # {"lat": float, "lon": float}
+    
+    # Human-readable addresses for LLM understanding
+    start_address: str
+    end_address: str
+    
+    # Traffic metrics
+    delay_seconds: int = 0
+    magnitude: int = 0  # 0-4 severity level
+    simple_category: str = ""  # "JAM", "SLOW", etc.
+    effective_speed_kmh: float = 0.0
+    
+    # Optional detailed traffic condition
     traffic_condition: Optional[TrafficCondition] = None
 
 
