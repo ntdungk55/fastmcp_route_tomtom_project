@@ -124,5 +124,6 @@ class Container:
             destination_repository=self.destination_repository,
             geocoding_provider=self.geocoding_adapter,
             routing_provider=self.routing_adapter,
-            traffic_provider=self.traffic_adapter
+            traffic_provider=self.traffic_adapter,
+            reverse_geocode_provider=self.reverse_geocode_adapter  # BLK-1-17
         )
