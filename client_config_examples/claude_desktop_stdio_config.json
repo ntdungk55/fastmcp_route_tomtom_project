@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "tomtom-route": {
-      "command": "uv",
-      "args": ["run", "python", "start_stdio_server.py"]
-    }
-  }
-}
