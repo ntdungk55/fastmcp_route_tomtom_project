@@ -50,5 +50,10 @@ Hướng dẫn điền thông tin :
 - Step 4 : Tạo các file test tự động các trường hợp có thể xảy ra . Nếu có vấn đề thì quay lại bước 3 .
 - Step 5 : Thông báo đến người dùng kiểm tra lại rồi nhận feedback của người dùng lưu vào file review dành riêng cho tính năng này.
 
+## Quy định cách thể hiện nội dung cho tất cả các tài liệu được tự động tạo từ LLM
+
+- Ngôn ngữ sử dụng mặc định : Tiếng Việt
+- Định dạng file text là .md
+
 
 
