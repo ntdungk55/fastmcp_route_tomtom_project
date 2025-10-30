@@ -307,7 +307,7 @@ Mục tiêu: Xử lý lỗi hệ thống (system errors) bằng cách ghi log ch
 ---
 
 ## 7) Liên kết (References)
-- **Diagram:** `prompt/specs/diagrams/routing mcp server diagram.drawio` - Block "ghi log và gửi thông báo rồi gửi trả thông báo lỗi hệ thống"
+- **Diagram:** `prompt/specs/diagrams/routing_suite/diagram.drawio` - Block "ghi log và gửi thông báo rồi gửi trả thông báo lỗi hệ thống"
 - **Related Blocks:**
   - ← BLK-1-05-ClassifyErrorType (input source)
   - → BLK-End (after sending error response)

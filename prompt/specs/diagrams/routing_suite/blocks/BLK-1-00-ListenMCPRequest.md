@@ -133,7 +133,7 @@ Mục tiêu: Lắng nghe và nhận request từ MCP Client, parse payload ban �
 ---
 
 ## 5) Liên kết (References)
-- **Diagram:** `prompt/specs/diagrams/routing mcp server diagram.drawio`
+- **Diagram:** `prompt/specs/diagrams/routing_suite/diagram.drawio`
 - **Related Blocks:** → BLK-1-01-ValidateInput
 - **Related Use Cases:** `app/interfaces/mcp/server.py` - MCP server handlers
 - **API Docs:** MCP Protocol Specification (JSON-RPC 2.0)

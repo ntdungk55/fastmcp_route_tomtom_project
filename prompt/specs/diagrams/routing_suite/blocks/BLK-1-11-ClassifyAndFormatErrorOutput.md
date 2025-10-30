@@ -339,7 +339,7 @@ Mục tiêu: Phân loại lỗi từ API response (BLK-1-10 failed path) và for
 ---
 
 ## 6) Liên kết (References)
-- **Diagram:** `prompt/specs/diagrams/routing mcp server diagram.drawio` - Block "phân loại và xử lý output trả dữ liệu phù hợp cho AI"
+- **Diagram:** `prompt/specs/diagrams/routing_suite/diagram.drawio` - Block "phân loại và xử lý output trả dữ liệu phù hợp cho AI"
 - **Related Blocks:**
   - ← BLK-1-10-CheckAPISuccess (trigger khi API fail)
   - ← BLK-1-16-ProcessTrafficSections (trigger khi process fail)

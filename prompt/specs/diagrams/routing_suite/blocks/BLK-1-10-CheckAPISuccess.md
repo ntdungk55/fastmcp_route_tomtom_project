@@ -309,7 +309,7 @@ def check_api_success(api_response: APIResponse) -> DecisionResult:
 ---
 
 ## 6) Liên kết (References)
-- **Diagram:** `prompt/specs/diagrams/routing mcp server diagram.drawio` - Decision node "success?"
+- **Diagram:** `prompt/specs/diagrams/routing_suite/diagram.drawio` - Decision node "success?"
 - **Related Blocks:**
   - ← BLK-1-09-RequestRoutingAPI (input source)
   - → BLK-1-12-TransformSuccessDataForAI (success path)

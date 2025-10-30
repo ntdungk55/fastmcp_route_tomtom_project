@@ -348,7 +348,7 @@ def format_traffic_info(delay_seconds: int, locale: str) -> str:
 ---
 
 ## 6) Liên kết (References)
-- **Diagram:** `prompt/specs/diagrams/routing mcp server diagram.drawio` - Block "chiết xuất dữ liệu rồi biến đổi sang dữ liệu phù hợp cho AI"
+- **Diagram:** `prompt/specs/diagrams/routing_suite/diagram.drawio` - Block "chiết xuất dữ liệu rồi biến đổi sang dữ liệu phù hợp cho AI"
 - **Related Blocks:**
   - ← BLK-1-10-CheckAPISuccess (success path)
   - → BLK-1-13-UpdateRequestResult (update request history với result)

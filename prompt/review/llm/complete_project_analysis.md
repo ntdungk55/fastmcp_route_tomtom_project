@@ -307,13 +307,13 @@ RESULTS: 14 passed, 3 failed
 ### 2.1 Trạng Thái Hiện Tại
 
 #### Trạng Thái Diagram
-- **Diagram:** ✅ Tồn tại (`prompt/specs/diagrams/routing mcp server diagram.drawio`)
+- **Diagram:** ✅ Tồn tại (`prompt/specs/diagrams/routing_suite/diagram.drawio`)
 - **Phạm Vi Blocks:** ✅ 15 blocks đã được định nghĩa (BLK-1-00 đến BLK-1-14)
 - **Tính năng trong Diagram:** ✅ Luồng routing chung áp dụng cho `get_detailed_route` (ghi chú: `calculate_route` sẽ bị loại bỏ)
 - **Ghi chú Diagram:** Diagram hiển thị luồng routing chung áp dụng cho nhiều tools bao gồm `get_detailed_route`
 
 #### Trạng Thái Blocks
-- **Tổng số Blocks:** 15 files trong `prompt/specs/diagrams/blocks/`
+- **Tổng số Blocks:** 15 files trong `prompt/specs/diagrams/routing_suite/blocks/`
 - **Blocks cho get_detailed_route:** ✅ Các blocks chung áp dụng (BLK-1-00 đến BLK-1-14)
 - **Độ cụ thể của Blocks:** ⚠️ Blocks là chung cho các routing tools, không cụ thể cho `get_detailed_route`
 - **Blocks thiếu:** ❌ Không có blocks chuyên biệt cho các yêu cầu riêng của `get_detailed_route`

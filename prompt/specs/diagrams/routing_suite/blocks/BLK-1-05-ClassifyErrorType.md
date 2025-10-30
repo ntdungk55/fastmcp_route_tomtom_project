@@ -259,7 +259,7 @@ Mục tiêu: Phân loại lỗi thành **lỗi hệ thống** (system error) ho�
 ---
 
 ## 6) Liên kết (References)
-- **Diagram:** `prompt/specs/diagrams/routing mcp server diagram.drawio` - Decision "Lỗi hệ thống hoặc do người dùng?"
+- **Diagram:** `prompt/specs/diagrams/routing_suite/diagram.drawio` - Decision "Lỗi hệ thống hoặc do người dùng?"
 - **Related Blocks:**
   - → BLK-1-03-MapValidationErrorsToUserMessages (user error path)
   - → BLK-1-06-HandleSystemError (system error path)

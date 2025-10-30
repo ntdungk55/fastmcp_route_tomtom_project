@@ -305,7 +305,7 @@ N. ✅ Đến nơi tại {destination}
 ---
 
 ## 6) Liên kết (References)
-- **Diagram:** `prompt/specs/diagrams/routing mcp server diagram.drawio` - BLK-1-14
+- **Diagram:** `prompt/specs/diagrams/routing_suite/diagram.drawio` - BLK-1-14
 - **Related Blocks:**
   - ← BLK-1-13-UpdateRequestResult (success)
   - ← BLK-1-03, BLK-1-06, BLK-1-11 (errors)

@@ -125,7 +125,7 @@ Mục tiêu: Kiểm tra xem có lỗi validation xảy ra sau BLK-1-01 hay khôn
 ---
 
 ## 5) Liên kết (References)
-- **Diagram:** `prompt/specs/diagrams/routing mcp server diagram.drawio` - Decision node "Lỗi?"
+- **Diagram:** `prompt/specs/diagrams/routing_suite/diagram.drawio` - Decision node "Lỗi?"
 - **Related Blocks:** 
   - ← BLK-1-01-ValidateInput (input source)
   - → BLK-1-03-MapValidationErrorsToUserMessages (error path)

@@ -581,7 +581,7 @@ END FUNCTION
 ---
 
 ## 6) Liên kết (References)
-- **Diagram:** `prompt/specs/diagrams/routing mcp server diagram.drawio` - Block "request thông tin từ API kiểm tra tuyến đường"
+- **Diagram:** `prompt/specs/diagrams/routing_suite/diagram.drawio` - Block "request thông tin từ API kiểm tra tuyến đường"
 - **Related Blocks:**
   - ← BLK-1-04-CheckDestinationExists (có thể dùng cached coords)
   - ← BLK-1-08-SaveDestination (sau khi save)

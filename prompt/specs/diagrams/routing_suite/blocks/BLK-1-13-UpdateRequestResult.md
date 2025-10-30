@@ -444,7 +444,7 @@ GROUP BY tool_name;
 ---
 
 ## 7) Liên kết (References)
-- **Diagram:** `prompt/specs/diagrams/routing mcp server diagram.drawio` - Database icon "cập nhật kết quả lịch sử request"
+- **Diagram:** `prompt/specs/diagrams/routing_suite/diagram.drawio` - Database icon "cập nhật kết quả lịch sử request"
 - **Related Blocks:**
   - ← BLK-1-07-SaveRequestHistory (created initial record)
   - ← BLK-1-16-ProcessTrafficSections (success aggregate with jam_pairs)

@@ -170,7 +170,7 @@ LIMIT 1;
 ---
 
 ## 5) Liên kết (References)
-- **Diagram:** `prompt/specs/diagrams/routing mcp server diagram.drawio` - Decision "kiểm tra input destination xem đã lưu hay chưa?"
+- **Diagram:** `prompt/specs/diagrams/routing_suite/diagram.drawio` - Decision "kiểm tra input destination xem đã lưu hay chưa?"
 - **Related Blocks:**
   - ← BLK-1-02-CheckError (success path)
   - → BLK-1-08-SaveDestination (if not exists)

@@ -251,7 +251,7 @@ Ví dụ body theo schema (nếu cần chuẩn hoá trước khi map sang path+q
 ---
 
 ## 5) Liên kết (References)
-- **Diagram:** Block `BLK-1-15` trong file `prompt/specs/diagrams/routing mcp server diagram.drawio` (đám mây "dịch vụ tomtom API- calculateRoute").
+- **Diagram:** Block `BLK-1-15` trong file `prompt/specs/diagrams/routing_suite/diagram.drawio` (đám mây "dịch vụ tomtom API- calculateRoute").
 - **API Definition (Postman item):** `resources/Tomtom.postman_collection.json` → item "tuyến tốt nhất A → B hiện có đoạn nào tắc nặng không".
 - **Related Blocks:**
   - `BLK-1-09` Request routing info from external API (nếu có trong flow).

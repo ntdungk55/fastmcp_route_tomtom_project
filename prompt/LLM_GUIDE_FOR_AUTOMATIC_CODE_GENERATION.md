@@ -26,8 +26,9 @@ prompt/
 ├── specs/                             # 📋 Feature Specifications
 │   ├── block_creation_instruction.txt # Template
 │   └── diagrams/
-│       ├── <feature>.drawio           # Diagram
-│       └── blocks/
+│       └── <feature>/                 # One folder per feature
+│           ├── diagram.drawio         # Diagram for this feature
+│           └── blocks/                # Block specs for this feature
 │           ├── BLK-<id>-BlockName.md  # Block specs
 │           └── ...
 │
@@ -60,7 +61,7 @@ prompt/
 Developer: "Tôi muốn tạo/sửa feature"
    ↓
 Phase 1: LLM ANALYSIS & REPORT
-   → Đọc file .drawio và các file mô tả trong thư mục prompt/specs/diagrams/ xem có thiếu gì không? 
+   → Đọc file diagram và các file mô tả trong thư mục `prompt/specs/diagrams/<feature>/` xem có thiếu gì không?
    → Scan codebase dựa trên các file trong thư mục project prompt/architecture/ xem có vấn đề gì không?
    → Dựa vào file specs phân tích sự khác biệt giữa code và logic
    → Gen report → lưu: prompt/review/llm/[feature]_analysis.md
@@ -80,8 +81,8 @@ Phase 2: LLM EXECUTE
 
 ### Scan Codebase
 ```
-1. Check diagram: specs/diagrams/<feature>.drawio
-2. Check blocks: specs/diagrams/blocks/BLK-*-*.md
+1. Check diagram: specs/diagrams/<feature>/diagram.drawio
+2. Check blocks: specs/diagrams/<feature>/blocks/BLK-*-*.md
 3. Check code: use_cases, ports, adapters, DTOs
 4. Find dependencies
 ```

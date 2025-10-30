@@ -9,7 +9,7 @@
 ## Tổng Quan Phân Tích
 
 ### Phương Pháp Phân Tích
-1. Đọc tất cả block specifications trong `prompt/specs/diagrams/blocks/`
+1. Đọc tất cả block specifications trong `prompt/specs/diagrams/<feature>/blocks/`
 2. Đọc Clean Architecture backbone trong `prompt/project architecture/clean_arch_prompt_v5_VI.txt`
 3. Đọc hướng dẫn triển khai trong `prompt/LLM_GUIDE_FOR_AUTOMATIC_CODE_GENERATION.md`
 4. So sánh code hiện tại với từng block specification

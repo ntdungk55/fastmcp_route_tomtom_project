@@ -274,7 +274,7 @@ LIMIT 50;
 ---
 
 ## 6) Liên kết (References)
-- **Diagram:** `prompt/specs/diagrams/routing mcp server diagram.drawio` - Database icon "lưu lịch sử request"
+- **Diagram:** `prompt/specs/diagrams/routing_suite/diagram.drawio` - Database icon "lưu lịch sử request"
 - **Related Blocks:**
   - ← BLK-1-00-ListenMCPRequest (initial save)
   - ← BLK-1-12-UpdateRequestResult (status updates)

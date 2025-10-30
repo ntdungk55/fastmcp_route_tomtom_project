@@ -298,7 +298,7 @@ GROUP BY geocoding_provider;
 ---
 
 ## 7) Liên kết (References)
-- **Diagram:** `prompt/specs/diagrams/routing mcp server diagram.drawio` - Database icon "lưu địa chỉ"
+- **Diagram:** `prompt/specs/diagrams/routing_suite/diagram.drawio` - Database icon "lưu địa chỉ"
 - **Related Blocks:**
   - ← BLK-1-04-CheckDestinationExists (trigger nếu not exists)
   - → BLK-1-09-RequestRoutingAPI (next step sau lưu)

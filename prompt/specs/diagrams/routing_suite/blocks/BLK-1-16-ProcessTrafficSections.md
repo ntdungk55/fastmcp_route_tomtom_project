@@ -152,7 +152,7 @@ Mục tiêu: Nhận `route_data` từ BLK-1-09, chuẩn hoá request gửi đế
 ## 5) Processing Logic
 
 ## 6) Liên kết (References)
-- **Diagram:** `prompt/specs/diagrams/routing mcp server diagram.drawio` - Block "Process Traffic Sections"
+- **Diagram:** `prompt/specs/diagrams/routing_suite/diagram.drawio` - Block "Process Traffic Sections"
 - **Related Blocks:**
   - ← BLK-1-09-RequestRoutingAPI (input source)
   - → BLK-1-17-ReverseGeocodeAPI (call to reverse geocode)

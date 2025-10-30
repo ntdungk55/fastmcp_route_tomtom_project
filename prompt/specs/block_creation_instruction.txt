@@ -116,7 +116,7 @@ Lược bớt nội dung nếu yêu cầu không cần đến.
 - **Schemas:** link đến schema files (JSON Schema, OpenAPI, Proto, etc.)
 
 **Ví dụ:**
-- **Diagram:** `BLK-XX-CreatePayment` (trong `diagrams/payment-flow.drawio`)
+- **Diagram:** `BLK-XX-CreatePayment` (trong `diagrams/payment_flow/diagram.drawio`)
 - **API Docs:** https://stripe.com/docs/api/payment_intents
 - **Related Use Cases:** `app/application/use_cases/create_payment.py`
 - **Related Blocks:** `BLK-YY-ValidatePayment`, `BLK-ZZ-ProcessPayment`
