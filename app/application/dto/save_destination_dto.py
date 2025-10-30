@@ -6,7 +6,7 @@ from app.domain.value_objects.latlon import LatLon
 @dataclass
 class SaveDestinationRequest:
     """DTO for save destination request"""
-    name: str
+    name: Optional[str]
     address: str
 
 

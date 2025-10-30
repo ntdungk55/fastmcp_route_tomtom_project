@@ -24,6 +24,10 @@ from app.application.dto.traffic_dto import TrafficCheckCommand, ReverseGeocodeC
 from app.domain.enums.travel_mode import TravelMode
 from app.domain.value_objects.latlon import LatLon
 from app.infrastructure.logging.logger import get_logger
+from datetime import datetime, timezone
+from app.domain.entities.destination import Destination
+from app.domain.value_objects.destination_name import DestinationName
+from app.domain.value_objects.address import Address
 
 logger = get_logger(__name__)
 
@@ -268,6 +272,22 @@ class GetDetailedRouteUseCase:
             if saved_dests:
                 logger.info(f"Found saved destination for {address}")
                 saved_dest = saved_dests[0]
+                # Ensure name equals input address string as per spec
+                if str(saved_dest.name) != address.strip():
+                    try:
+                        now = datetime.now(timezone.utc)
+                        updated = Destination(
+                            id=saved_dest.id,
+                            name=DestinationName(address.strip()),
+                            address=Address(address.strip()),
+                            coordinates=saved_dest.coordinates,
+                            created_at=saved_dest.created_at,
+                            updated_at=now
+                        )
+                        await self._destination_repository.save(updated)
+                        logger.info("Updated saved destination name to input address string")
+                    except Exception as e:
+                        logger.warning(f"Failed to normalize destination name for '{address}': {e}")
                 return saved_dest.coordinates, saved_dest.name
         except Exception as e:
             logger.debug(f"Could not find saved destination: {str(e)}")
@@ -291,6 +311,25 @@ class GetDetailedRouteUseCase:
         geocoded_address = first_result.address.freeform_address if hasattr(first_result.address, 'freeform_address') else address
         
         logger.info(f"Geocoded {address} to {coordinates.lat}, {coordinates.lon}")
+
+        # BLK-1-08 — Save Destination to database (idempotent behavior delegated to repository)
+        try:
+            now = datetime.now(timezone.utc)
+            destination_to_save = Destination(
+                id=None,
+                # Keep name consistent with input address to avoid mismatch with stored address
+                name=DestinationName(address),
+                address=Address(address),
+                coordinates=coordinates,
+                created_at=now,
+                updated_at=now
+            )
+            await self._destination_repository.save(destination_to_save)
+            logger.info(f"Saved destination to database: {address}")
+        except Exception as e:
+            # Do not block main flow if persistence fails per spec
+            logger.warning(f"Failed to save destination '{address}': {e}")
+
         return coordinates, geocoded_address
     
     def _extract_instructions(self, route_plan) -> list:

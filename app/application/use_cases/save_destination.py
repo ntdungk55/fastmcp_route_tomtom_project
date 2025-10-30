@@ -27,13 +27,14 @@ class SaveDestinationUseCase:
         try:
             logger.info(f"Saving destination: {request.name}")
             
-            # Check if destination with same name already exists
-            existing_destination = await self._destination_repository.find_by_name(request.name)
-            if existing_destination:
-                return SaveDestinationResponse(
-                    success=False,
-                    error=f"Destination with name '{request.name}' already exists"
-                )
+            # Check if destination with same name already exists (only if name is provided)
+            if request.name is not None and request.name.strip():
+                existing_destination = await self._destination_repository.find_by_name(request.name)
+                if existing_destination:
+                    return SaveDestinationResponse(
+                        success=False,
+                        error=f"Destination with name '{request.name}' already exists"
+                    )
             
             # Geocode address to get coordinates
             logger.info(f"Geocoding address: {request.address}")
@@ -59,11 +60,14 @@ class SaveDestinationUseCase:
             
             logger.info(f"Found coordinates: {coordinates.lat}, {coordinates.lon}")
             
+            # Derive name if not provided: use input address to keep consistency with stored address
+            final_name_str = (request.name or request.address).strip()
+
             # Create destination entity with value objects
             now = datetime.now(timezone.utc)
             destination = Destination(
                 id=None,  # Will be set by repository
-                name=DestinationName(request.name.strip()),
+                name=DestinationName(final_name_str),
                 address=Address(request.address.strip()),
                 coordinates=coordinates,
                 created_at=now,
@@ -91,7 +95,7 @@ class SaveDestinationUseCase:
                 return SaveDestinationResponse(
                     success=True,
                     destination_id=saved_destination.id,
-                    message=f"Destination '{request.name}' saved successfully at {coordinates.lat}, {coordinates.lon}"
+                    message=f"Destination '{final_name_str}' saved successfully at {coordinates.lat}, {coordinates.lon}"
                 )
             else:
                 logger.error("❌ Database verification failed - destination not found in database")

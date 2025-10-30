@@ -29,7 +29,28 @@ class SQLiteDestinationRepository(DestinationRepository):
             async with self._db_connection as conn:
                 cursor = await conn.cursor()
                 
-                # Generate ID if not provided
+                # Idempotent check: prefer unique by NAME, then by ADDRESS
+                # 1) Try match by name (case-insensitive exact)
+                if destination.id is None:
+                    await cursor.execute(
+                        "SELECT id FROM destinations WHERE LOWER(name) = LOWER(?)",
+                        (str(destination.name),)
+                    )
+                    row = await cursor.fetchone()
+                    if row:
+                        destination.id = row[0]
+
+                # 2) If still no id, try match by address (case-insensitive exact)
+                if destination.id is None:
+                    await cursor.execute(
+                        "SELECT id FROM destinations WHERE LOWER(address) = LOWER(?)",
+                        (str(destination.address),)
+                    )
+                    row = await cursor.fetchone()
+                    if row:
+                        destination.id = row[0]
+
+                # 3) If still no id, generate a new one for insert
                 if destination.id is None:
                     destination.id = str(uuid.uuid4())
                 
