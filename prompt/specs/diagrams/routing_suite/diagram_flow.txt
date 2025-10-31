@@ -1,0 +1,48 @@
+# Routing Suite - Text Diagram Flow
+
+BLK-Start
+  |
+  v
+BLK-1-00 (Listen MCP Request)
+  |
+  +-> BLK-1-07 (Save Request History) [parallel]
+  |
+  v
+BLK-1-01 (Validate Input Param)
+  |
+  v
+BLK-1-02 (Check Error?)
+  |
+  +--[true]--> BLK-1-05 (Classify Error Type)
+  |              |
+  |              +--[user error]--> BLK-1-03 (Map Validation Errors) --> BLK-End
+  |              |
+  |              +--[system error]--> BLK-1-06 (Handle System Error) --> BLK-End
+  |
+  +--[false]--> BLK-1-04 (Check Destination Exists?)
+                  |
+                  +--[true]--> BLK-1-08 (Save Destination)
+                  |
+                  +--[false]--> BLK-1-09 (Request Routing API)
+                                 |
+                                 v
+                                 BLK-1-10 (Success?)
+                                 |
+                                 +--[true]--> BLK-1-12 (Transform Success Data)
+                                 |              |
+                                 |              v
+                                 |              BLK-1-13 (Update Request Result)
+                                 |              |
+                                 |              v
+                                 |              BLK-1-14 (Normalize Output)
+                                 |              |
+                                 |              v
+                                 |              BLK-End
+                                 |
+                                 +--[false]--> BLK-1-11 (Classify Error Output)
+                                                |
+                                                v
+                                                BLK-End
+
+External Services:
+- BLK-1-15 (TomTom API - calculateRoute) -> BLK-1-09

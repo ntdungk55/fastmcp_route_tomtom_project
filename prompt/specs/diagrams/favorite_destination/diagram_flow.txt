@@ -1,0 +1,60 @@
+# Favorite Destination - Text Diagram Flow
+
+BLK-Start
+  |
+  v
+BLK-FAV-00 (Listen MCP Request / Overview)
+  |
+  v
+BLK-FAV-01 (Validate Input)
+  |
+  v
+[Route based on operation type]
+  |
+  +--[save]--> BLK-FAV-01 (Save Favorite)
+  |              |
+  |              v
+  |              [Check if exists]
+  |              |
+  |              +--[exists]--> Return existing
+  |              |
+  |              +--[not exists]--> Save to DB
+  |                                  |
+  |                                  v
+  |                                  Return saved favorite
+  |
+  +--[list]--> BLK-FAV-02 (List Favorites)
+  |              |
+  |              v
+  |              Query DB
+  |              |
+  |              v
+  |              Return list
+  |
+  +--[update]--> BLK-FAV-03 (Update Favorite)
+  |                |
+  |                v
+  |                [Find by ID]
+  |                |
+  |                +--[not found]--> Return error
+  |                |
+  |                +--[found]--> Update fields
+  |                                |
+  |                                v
+  |                                Return updated
+  |
+  +--[delete]--> BLK-FAV-04 (Delete Favorite)
+                  |
+                  v
+                  [Find by ID or name/address]
+                  |
+                  +--[not found]--> Return error
+                  |
+                  +--[found]--> Delete from DB
+                                  |
+                                  v
+                                  Return success
+  |
+  v
+BLK-End (Normalize Output)
+
