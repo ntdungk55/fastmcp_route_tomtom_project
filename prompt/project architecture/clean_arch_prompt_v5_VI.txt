@@ -282,14 +282,47 @@ Interface constants  → app/interfaces/constants/ (UI defaults)
 ### 4.2 🏗️ LUẬT RIÊNG (Layer-Specific Rules)
 
 #### 4.2.1 Domain Layer - Business Logic
-**Pattern:** `{Entity}`, `{ValueObject}`, `{Entity}Event`
+**Pattern:** `{Entity}`, `{ValueObject}`, `{Entity}Service`, `{Entity}Event`
 
 - **Entities:** `User`, `Order`, `Product` (danh từ số ít, CapWords, không hậu tố Model)
 - **Value Objects:** `Money`, `Email`, `Coordinates` (ý nghĩa giá trị, không ID kỹ thuật)
+- **Domain Services:** `{Entity}CalculationService`, `{Entity}AnalysisService`, `{Entity}RecommendationService` (business logic phức tạp)
 - **Identity:** `{Entity}Id` → `UserId`, `OrderId`, `ProductId`
 - **Names:** `{Entity}Name` → `ProductName`, `CategoryName`, `CustomerName`
 - **Status:** `{Entity}Status` → `OrderStatus`, `UserStatus`, `PaymentStatus`
 - **Events:** `{Entity}Event` → `UserCreatedEvent`, `OrderPlacedEvent`, `PaymentProcessedEvent`
+
+##### Domain Services (QUAN TRỌNG - ĐỪNG BỎ QUA)
+
+**Khi nào cần Domain Service:**
+- ✅ Business logic phức tạp (nhiều bước tính toán, công thức)
+- ✅ Cần nhiều entities/value objects cùng lúc
+- ✅ Business rule không thuộc về một entity cụ thể
+- ✅ Tính toán, phân tích, recommendation logic
+
+**Khi KHÔNG cần Domain Service:**
+- ❌ Logic đơn giản (1-2 dòng code) → đặt trong Entity
+- ❌ Chỉ liên quan đến 1 entity/value object → đặt trong Entity/VO
+- ❌ Chỉ là validation hoặc getter/setter → đặt trong Entity/VO
+
+**Pattern:**
+- `{Entity}CalculationService` → `WeatherCalculationService`, `RouteCalculationService`
+- `{Entity}AnalysisService` → `WeatherAnalysisService`, `TrafficAnalysisService`
+- `{Entity}RecommendationService` → `WeatherRecommendationService`
+
+# ✅ ĐÚNG: Simple logic trong Entity
+# app/domain/entities/weather.py
+class Weather:
+    def is_hot(self, threshold_celsius: float = 30.0) -> bool:
+        """Simple check - OK trong Entity."""
+        return self.temperature.to_celsius() > threshold_celsius
+```
+
+**Rules cho Domain Services:**
+- ✅ Pure functions (NO I/O, NO external libraries)
+- ✅ Chỉ sử dụng Domain entities, value objects, enums
+- ✅ Deterministic (cùng input → cùng output)
+- ✅ Stateless (không có instance state)
 
 #### 4.2.2 Application Layer - Use Cases & DTOs
 **Pattern:** `{Action}{Entity}`, `{Action}{Entity}{Type}Dto`
@@ -339,12 +372,15 @@ Interface constants  → app/interfaces/constants/ (UI defaults)
 
 #### DOMAIN LAYER
 ```
-{Entity}                          → User, Order, Product
+{Entity}                          → User, Order, Product, Weather
 {Entity}Id                        → UserId, OrderId, ProductId
 {Entity}Name                      → ProductName, CategoryName
 {Entity}Status                    → OrderStatus, UserStatus, PaymentStatus
 {Entity}Event                     → UserCreatedEvent, OrderPlacedEvent
-{ValueObject}                     → Money, Email, Coordinates, Price
+{ValueObject}                     → Money, Email, Coordinates, Price, Temperature
+{Entity}CalculationService        → WeatherCalculationService, RouteCalculationService
+{Entity}AnalysisService           → WeatherAnalysisService, TrafficAnalysisService
+{Entity}RecommendationService    → WeatherRecommendationService
 ```
 
 #### APPLICATION LAYER
@@ -1499,6 +1535,105 @@ tooling:
 - Nếu khác tên nhưng cùng vai trò, cân nhắc hợp nhất hoặc refactor nhẹ để loại bỏ trùng lặp.
 - Bảo toàn ranh giới layer (Domain/Application/Infrastructure/Interfaces) và quy ước đặt tên hiện có; không đưa logic sai layer.
 - Khi thay đổi hành vi, cập nhật wiring DI, imports, và tests liên quan; ghi chú migration/backward‑compat nếu có breaking changes.
+
+### STEP 2.6 — TẠO DOMAIN LAYER TRƯỚC (BẮT BUỘC CHO MỌI TÍNH NĂNG MỚI)
+**⚠️ NGUYÊN TẮC CHUNG: Khi tạo bất kỳ tính năng mới nào, PHẢI tạo Domain layer (business logic thuần) TRƯỚC, sau đó mới tạo các tầng khác.**
+
+#### 2.6.1 Thứ Tự Tạo Code (MANDATORY ORDER - Áp Dụng Cho MỌI Tính Năng)
+1. **Domain Layer (TRƯỚC TIÊN - BẮT BUỘC)**
+   - ✅ Tạo Value Objects trước (validation rules, business constraints, immutable values)
+   - ✅ Tạo Entities (business rules, invariants, simple business methods)
+   - ✅ Tạo Domain Services (nếu có business logic phức tạp: calculations, analysis, recommendations)
+   - ✅ Tạo Domain Errors (nếu cần)
+   - ✅ Tạo Domain Enums (nếu cần)
+   - ✅ Tạo Domain Constants (business constants, KHÔNG URL/vendor)
+
+2. **Application Layer (SAU Domain Layer - Chỉ tạo khi Domain layer đã hoàn chỉnh)**
+   - ✅ Tạo DTOs (Command, Query, Response)
+   - ✅ Tạo Ports (interfaces/protocols)
+   - ✅ Tạo Use Cases
+
+3. **Infrastructure Layer (SAU Application Layer - Chỉ tạo khi Application layer đã hoàn chỉnh)**
+   - ✅ Tạo Adapters (implement ports)
+   - ✅ Tạo Provider-specific DTOs
+   - ✅ Tạo ACL Mappers
+
+4. **Interfaces Layer (SAU Infrastructure Layer - Chỉ tạo khi Infrastructure layer đã hoàn chỉnh)**
+   - ✅ Tạo MCP/REST/CLI handlers
+   - ✅ Tạo UI Models (nếu cần)
+
+#### 2.6.2 Yêu Cầu Mô Tả Business Logic (MANDATORY DOCUMENTATION)
+Khi tạo Domain layer cho bất kỳ tính năng mới nào, PHẢI mô tả rõ ràng business logic bao gồm:
+
+**A. Value Objects Documentation:**
+- ✅ Tên Value Object và mục đích trong business context
+- ✅ Validation rules (range, format, constraints)
+- ✅ Business constraints (min/max values, allowed values, business rules)
+- ✅ Conversion methods (nếu có: unit conversion, format conversion, etc.)
+- ✅ Immutability và equality semantics
+
+**B. Entities Documentation:**
+- ✅ Tên Entity và mục đích trong business context
+- ✅ Business rules (invariants, consistency rules, business constraints)
+- ✅ Simple business methods (checks, queries trên entity data)
+- ✅ Relationships với Value Objects
+- ✅ Lifecycle và state transitions (nếu có)
+
+**C. Domain Services Documentation (nếu có):**
+- ✅ Tên Service và mục đích trong business context
+- ✅ Business logic phức tạp (calculations, analysis, recommendations)
+- ✅ Input/Output với Value Objects/Entities
+- ✅ Business rules và formulas (nếu có)
+- ✅ Stateless và pure functions (no I/O, no external dependencies)
+
+**D. Domain Errors Documentation (nếu có):**
+- ✅ Error types và khi nào raise
+- ✅ Business context của errors
+
+#### 2.6.3 Rules & Constraints (Áp Dụng Cho MỌI Tính Năng)
+- ❌ **KHÔNG ĐƯỢC** tạo Application layer trước Domain layer
+- ❌ **KHÔNG ĐƯỢC** tạo Infrastructure layer trước Domain layer
+- ❌ **KHÔNG ĐƯỢC** tạo Interfaces layer trước Domain layer
+- ❌ **KHÔNG ĐƯỢC** tạo Use Cases khi chưa có Entities/Value Objects
+- ❌ **KHÔNG ĐƯỢC** tạo Adapters khi chưa có Ports/Entities
+- ❌ **KHÔNG ĐƯỢC** tạo Handlers khi chưa có Use Cases
+- ✅ **BẮT BUỘC** Domain layer hoàn chỉnh (pure business logic) trước khi chuyển sang layers khác
+- ✅ **BẮT BUỘC** mô tả business logic rõ ràng trong code/docstrings
+- ✅ **BẮT BUỘC** tạo Domain Services nếu có business logic phức tạp (calculations, analysis, recommendations)
+- ✅ **BẮT BUỘC** Domain layer không có I/O, không có external dependencies
+
+#### 2.6.4 Quy Tắc Chung
+**Business Logic Thuần:**
+- Domain layer chỉ chứa business logic thuần (pure logic)
+- Không có I/O operations (database, HTTP, file system)
+- Không có external dependencies (vendor libraries, frameworks)
+- Chỉ sử dụng built-in types và domain types khác
+- Deterministic và testable không cần mocks
+
+**Thứ Tự Dependencies:**
+```
+Domain (không depend vào gì)
+    ↓
+Application (depend vào Domain)
+    ↓
+Infrastructure (depend vào Application + Domain)
+    ↓
+Interfaces (depend vào tất cả layers)
+```
+
+**Ví Dụ Nguyên Tắc (Áp Dụng Cho Mọi Tính Năng):**
+```
+✅ ĐÚNG - Thứ tự tạo code:
+1. Domain Layer (Value Objects → Entities → Domain Services)
+2. Application Layer (DTOs → Ports → Use Cases)
+3. Infrastructure Layer (Adapters → Provider DTOs → ACL Mappers)
+4. Interfaces Layer (MCP/REST/CLI handlers → UI Models)
+
+❌ SAI - Tạo layer khác trước Domain:
+❌ Tạo Use Case khi chưa có Entity/Value Objects
+❌ Tạo Adapter khi chưa có Ports/Entities
+❌ Tạo Handler khi chưa có Use Cases
+```
 
 ### STEP 3 — SCAFFOLD CODE & FILES
 - Chỉ scaffold các thành phần CHƯA tồn tại (sau STEP 2.5). Nếu thành phần đã có, cập nhật/mở rộng thay vì tạo mới.
