@@ -42,8 +42,7 @@ Hướng dẫn điền thông tin :
 
 ## 4 Hướng dẫn tạo tính năng từ yêu cầu người dùng
 
-- Step 1 : Khi nhận yêu cầu của người dùng LLM sẽ phân tích yêu cầu người dùng bằng cách dựa vào thông tin người dùng 
-    cung cấp rồi tìm kiếm thông tin liên quan . Sau khi đủ thông tin xây dựng một sơ đồ theo chuẩn được mô tả ở file prompt\specs\diagram_instruction.md. 
+- Step 1 : Khi nhận yêu cầu của người dùng LLM sẽ phân tích yêu cầu người dùng bằng cách dựa vào thông tin người dùng cung cấp rồi tìm kiếm thông tin liên quan . Sau khi đủ thông tin xây dựng một sơ đồ theo chuẩn được mô tả ở file prompt\specs\diagram_instruction.md và các file mô tả cho các block mà bạn đã tạo. 
 - Step 2 : Sau khi có diagram và các file mô tả quay lại file này ở prompt\PROJECT_OVERVIEW.md cập nhật tính năng ở mục
     "## Các tính năng và tình trạng" theo mẫu đã được hướng dẫn .
 - Step 3 : Dựa vào diagram và mô tả cùng với hướng dẫn ở file prompt\LLM_GUIDE_FOR_AUTOMATIC_CODE_GENERATION.md , Tạo code dựa trên code đã có .

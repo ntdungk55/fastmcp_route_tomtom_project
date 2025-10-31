@@ -13,10 +13,6 @@ prompt/specs/diagrams/
         └── ...
 ```
 
-Ví dụ đã có (làm mẫu):
-- `prompt/specs/diagrams/routing_suite/diagram.drawio`
-- `prompt/specs/diagrams/routing_suite/blocks/BLK-1-00-ListenMCPRequest.md` (và các block khác)
-
 ## Quy tắc đặt tên
 - `<feature>`: tên ngắn gọn theo snake_case, phản ánh tính năng (ví dụ: `routing_suite`, `favorite_destination`).
 - Block file: `BLK-<group>-<index>-<Tên-Block>.md` (ví dụ: `BLK-1-09-RequestRoutingAPI.md`).
