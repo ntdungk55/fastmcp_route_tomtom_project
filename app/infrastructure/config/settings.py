@@ -1,7 +1,12 @@
 
 import os
 
+from dotenv import load_dotenv
 from pydantic import BaseModel, Field, field_validator
+
+# Load environment variables from .env file
+# This ensures .env file is loaded before reading environment variables
+load_dotenv()
 
 
 class Settings(BaseModel):
@@ -21,6 +26,9 @@ class Settings(BaseModel):
     database_path: str = Field(
         default_factory=lambda: os.getenv("DATABASE_PATH", "app/infrastructure/persistence/database/destinations.db")
     )
+    weatherapi_api_key: str = Field(
+        default_factory=lambda: os.getenv("WEATHERAPI_API_KEY", "")
+    )
 
     @field_validator('tomtom_base_url')
     @classmethod
@@ -34,6 +42,15 @@ class Settings(BaseModel):
     def validate_api_key(cls, v: str) -> str:
         if not v:
             raise ValueError("TOMTOM_API_KEY is required")
+        return v
+    
+    @field_validator('weatherapi_api_key')
+    @classmethod
+    def validate_weatherapi_api_key(cls, v: str) -> str:
+        # WeatherAPI.com API key is optional (only required if weather feature is used)
+        # Don't validate as required here, only validate format if provided
+        if v and len(v.strip()) < 20:
+            raise ValueError("WEATHERAPI_API_KEY format is invalid (expected min 20 chars)")
         return v
 
     @field_validator('log_level')

@@ -32,6 +32,7 @@ from app.application.dto.save_destination_dto import SaveDestinationRequest
 from app.application.dto.search_destinations_dto import SearchDestinationsRequest
 from app.application.dto.delete_destination_dto import DeleteDestinationRequest
 from app.application.dto.update_destination_dto import UpdateDestinationRequest
+from app.application.dto.weather_dto import WeatherCheckRequest
 
 # DI Container
 from app.di.container import Container
@@ -218,6 +219,52 @@ async def get_detailed_route_tool(
         print(f"\n❌ Error in get_detailed_route: {str(e)}")
         return {"error": MCPToolErrorMessages.GET_DETAILED_ROUTE_FAILED.format(error=str(e))}
 
+@mcp.tool(name=MCPToolNames.CHECK_WEATHER)
+async def check_weather_tool(
+    location: str,
+    units: str = "metric",
+    language: str = "vi"
+) -> dict:
+    f"""{MCPToolDescriptions.CHECK_WEATHER}"""
+    try:
+        # Kiểm tra weather feature có được enable không
+        if _container.get_weather is None:
+            return {
+                "success": False,
+                "error": "Weather feature is not available. Please configure WEATHERAPI_API_KEY environment variable."
+            }
+        
+        # Sử dụng Get Weather Use Case
+        request = WeatherCheckRequest(
+            location=location,
+            units=units,
+            language=language
+        )
+        
+        result = await _container.get_weather.execute(request)
+        
+        # Log verification status
+        if result.success:
+            print(f"\n[SUCCESS] Weather Check Success")
+            print(f"[LOCATION] {result.location} ({result.coordinates})")
+            if result.weather_data:
+                print(f"[WEATHER] {result.weather_data.description}")
+                # Display temperature with appropriate unit symbol
+                unit_symbol = "°C" if result.weather_data.units == "metric" else "°F" if result.weather_data.units == "imperial" else "K"
+                print(f"[TEMPERATURE] {result.weather_data.temperature}{unit_symbol} (feels like {result.weather_data.feels_like}{unit_symbol})")
+                print(f"[HUMIDITY] {result.weather_data.humidity}%")
+                print(f"[PRESSURE] {result.weather_data.pressure} hPa")
+                print(f"[WIND] {result.weather_data.wind_speed} m/s")
+                if result.weather_data.visibility:
+                    print(f"[VISIBILITY] {result.weather_data.visibility} m")
+        else:
+            print(f"\n[ERROR] Weather Check Failed: {result.error_message}")
+        
+        # Trả về response dưới dạng dict
+        return asdict(result)
+    except Exception as e:
+        return {"error": MCPToolErrorMessages.CHECK_WEATHER_FAILED.format(error=str(e))}
+
 # Traffic recommendations đã được chuyển vào TrafficMapper trong ACL layer
         
 def main():
@@ -241,12 +288,18 @@ def main():
             "update_destination"
         ]
         
+        # Add weather tool if enabled
+        if _container.get_weather is not None:
+            available_tools.append("check_weather")
+        
         print(f"Available tools ({len(available_tools)}):")
         print(f"   • get_detailed_route - {MCPToolDescriptions.GET_DETAILED_ROUTE}")
         print(f"   • save_destination - {MCPToolDescriptions.SAVE_DESTINATION}")
         print(f"   • list_destinations - {MCPToolDescriptions.LIST_DESTINATIONS}")
         print(f"   • delete_destination - {MCPToolDescriptions.DELETE_DESTINATION}")
         print(f"   • update_destination - {MCPToolDescriptions.UPDATE_DESTINATION}")
+        if _container.get_weather is not None:
+            print(f"   • check_weather - {MCPToolDescriptions.CHECK_WEATHER}")
         print("=" * 60)
         print(f"Transport: {MCPServerConstants.DEFAULT_TRANSPORT}")
         print(f"Endpoint: http://{config.server_host}:{config.server_port}")

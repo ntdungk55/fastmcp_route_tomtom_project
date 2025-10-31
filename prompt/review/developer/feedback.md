@@ -41,3 +41,12 @@ FIX: chạy lệnh " uv run python xxx.py" với file xxx.py là file chứa mcp
 BÀI HỌC: Phải biết môi trường đang sử dụng thư viện nào để chạy lệnh
 SEVERITY: Major
 TAGS: llm behavior
+```
+ID: BUG-20251031-001
+MODULE: tạo code cho tính năng
+ISSUE: tạo tính năng mới nhưng không có update bussiness logic trong tầng domain
+CAUSE: LLM không hiểu 
+FIX: Yêu cầu LLM tạo lại code
+BÀI HỌC: Phải tuân thủ chuẩn Clean architecture
+SEVERITY: Critical
+TAGS: llm behavior

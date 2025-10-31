@@ -7,6 +7,7 @@ load_dotenv()
 # Use Cases (only essential ones)
 from app.application.use_cases.delete_destination import DeleteDestinationUseCase
 from app.application.use_cases.get_detailed_route import GetDetailedRouteUseCase
+from app.application.use_cases.get_weather import GetWeatherUseCase
 from app.application.use_cases.save_destination import SaveDestinationUseCase
 from app.application.use_cases.search_destinations import SearchDestinationsUseCase
 from app.application.use_cases.update_destination import UpdateDestinationUseCase
@@ -22,6 +23,8 @@ from app.infrastructure.tomtom.adapters.geocoding_adapter import TomTomGeocoding
 from app.infrastructure.tomtom.adapters.routing_adapter import TomTomRoutingAdapter
 from app.infrastructure.tomtom.adapters.traffic_adapter import TomTomTrafficAdapter
 from app.infrastructure.tomtom.adapters.reverse_geocode_adapter import TomTomReverseGeocodeAdapter
+from app.infrastructure.adapters.weather_adapter import WeatherAPIAdapter
+from app.infrastructure.adapters.weather_geocoding_adapter import WeatherAPIGeocodingAdapter
 
 # Services
 from app.application.services.validation_service import get_validation_service
@@ -95,6 +98,18 @@ class Container:
         
         # Reverse Geocode adapter (mới)
         self.reverse_geocode_adapter = TomTomReverseGeocodeAdapter(**base_config)
+        
+        # Weather adapter (WeatherAPI.com)
+        if self.settings.weatherapi_api_key:
+            self.weather_adapter = WeatherAPIAdapter(
+                api_key=self.settings.weatherapi_api_key,
+                http=self.http,
+                timeout_sec=self.settings.http_timeout_sec
+            )
+        else:
+            # Weather adapter is optional - set to None if API key not configured
+            self.weather_adapter = None
+            self.logger.warning("WeatherAPI.com API key not configured - weather feature will be disabled")
     
     def _init_repositories(self):
         """Khởi tạo tất cả repositories."""
@@ -127,3 +142,20 @@ class Container:
             traffic_provider=self.traffic_adapter,
             reverse_geocode_provider=self.reverse_geocode_adapter  # BLK-1-17
         )
+        
+        # Weather Use Case (optional - only if weather adapter is configured)
+        if self.weather_adapter:
+            # Use WeatherAPI.com geocoding adapter for weather feature
+            # This keeps weather feature independent from TomTom Maps
+            weather_geocoding_adapter = WeatherAPIGeocodingAdapter(
+                api_key=self.settings.weatherapi_api_key,
+                http=self.http,
+                timeout_sec=self.settings.http_timeout_sec
+            )
+            
+            self.get_weather = GetWeatherUseCase(
+                geocoding_provider=weather_geocoding_adapter,
+                weather_provider=self.weather_adapter
+            )
+        else:
+            self.get_weather = None

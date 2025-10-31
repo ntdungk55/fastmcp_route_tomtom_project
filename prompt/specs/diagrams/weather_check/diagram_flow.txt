@@ -1,0 +1,41 @@
+# Weather Check - Text Diagram Flow
+
+BLK-Start
+  |
+  v
+BLK-2-00 (Listen MCP Request)
+  |
+  v
+BLK-2-01 (Validate Input Param)
+  |
+  v
+BLK-2-02 (Check Error?)
+  |
+  +--[true]--> BLK-2-03 (Map Validation Errors) --> BLK-End
+  |
+  +--[false]--> BLK-2-04 (Get Coordinates from Address)
+                   |
+                   v
+                   BLK-2-05 (Check API Key Configured?)
+                   |
+                   +--[false]--> BLK-2-06 (Handle System Error) --> BLK-End
+                   |
+                   +--[true]--> BLK-2-07 (Request Weather API)
+                                 |
+                                 v
+                                 BLK-2-08 (Check API Success?)
+                                 |
+                                 +--[false]--> BLK-2-09 (Classify Error Output) --> BLK-End
+                                 |
+                                 +--[true]--> BLK-2-10 (Transform Weather Data)
+                                               |
+                                               v
+                                               BLK-2-11 (Normalize Output)
+                                               |
+                                               v
+                                               BLK-End
+
+External Services:
+- BLK-2-12 (WeatherAPI.com API) -> BLK-2-07
+- BLK-2-13 (Geocoding API - nếu cần) -> BLK-2-04
+

@@ -36,6 +36,14 @@ Hướng dẫn điền thông tin :
         + Thông tin về tình trạng giao thông
     * Tình trạng : Hoàn thành
 
+- Kiểm tra thời tiết tại một địa điểm:
+    * Tính năng : 
+        + Kiểm tra thời tiết hiện tại
+        + Hỗ trợ tìm kiếm theo địa chỉ hoặc tọa độ
+        + Thông tin nhiệt độ, độ ẩm, áp suất, gió, mây
+        + Hỗ trợ nhiều đơn vị (metric, imperial, kelvin)
+    * Tình trạng : Đang phát triển
+
 - Tạo tính năng theo yêu cầu của người dùng:
     * Tính năng : 
     * Tình trạng : Chưa phát triển

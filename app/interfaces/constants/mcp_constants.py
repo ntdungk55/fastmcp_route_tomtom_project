@@ -26,6 +26,7 @@ class MCPServerConstants:
     TRAFFIC_TOOLS = ["get_traffic_condition", "get_route_with_traffic", "analyze_route_traffic"]
     COMPOSITE_TOOLS = ["get_via_route", "check_traffic_between_addresses", "get_detailed_route"]
     DESTINATION_TOOLS = ["save_destination", "list_destinations", "delete_destination", "update_destination"]
+    WEATHER_TOOLS = ["check_weather"]
 
 
 class MCPTypeConstants:
@@ -58,6 +59,7 @@ class MCPToolNames:
     DELETE_DESTINATION = "delete_destination"
     UPDATE_DESTINATION = "update_destination"
     GET_DETAILED_ROUTE = "get_detailed_route"
+    CHECK_WEATHER = "check_weather"
 
 
 class MCPToolDescriptions:
@@ -277,6 +279,40 @@ class MCPToolDescriptions:
     - JSON with success status, destination ID, and verification that data was updated in database
     - Returns error if destination not found or update failed
     """
+    
+    # WEATHER TOOLS
+    CHECK_WEATHER = """
+    Check current weather at a location (address or coordinates).
+    
+    INPUT:
+    - location: str (address or "lat,lon" coordinates)
+      Examples: "Ho Chi Minh City, Vietnam", "10.8231,106.6297", "Hanoi"
+      
+    - units: str (optional, default: "metric") - Temperature units:
+      * "metric" - Celsius (metric units)
+      * "imperial" - Fahrenheit (imperial units)
+      * "kelvin" - Kelvin (scientific units)
+      
+    - language: str (optional, default: "vi") - Language for weather description
+      Examples: "vi", "en", "fr"
+    
+    OUTPUT:
+    - JSON with current weather information including:
+      * Temperature and feels-like temperature
+      * Humidity, pressure
+      * Weather description
+      * Wind speed and direction
+      * Visibility and cloudiness
+      * Sunrise/sunset times
+      * Location name and country
+    - Returns error if location cannot be found or weather data unavailable
+    
+    EXAMPLES:
+    - By address: location="Ho Chi Minh City, Vietnam"
+    - By coordinates: location="10.8231,106.6297"
+    - Metric units: units="metric"
+    - Imperial units: units="imperial"
+    """
 
 
 class MCPErrorMessages:
@@ -324,6 +360,9 @@ class MCPToolErrorMessages:
     LIST_DESTINATIONS_FAILED = "List destinations failed: {error}"
     DELETE_DESTINATION_FAILED = "Delete destination failed: {error}"
     UPDATE_DESTINATION_FAILED = "Update destination failed: {error}"
+    
+    # Weather errors
+    CHECK_WEATHER_FAILED = "Check weather failed: {error}"
 
 
 class MCPSuccessMessages:

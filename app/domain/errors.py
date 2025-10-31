@@ -85,3 +85,15 @@ class InvalidDateTimeError(DomainError):
     
     def __init__(self, message: str, entity_id: str = None, field: str = None, value: Any = None):
         super().__init__(message, entity_id, field, value)
+
+
+# Weather domain errors (imported from value objects)
+from app.domain.value_objects.temperature import InvalidTemperatureError
+from app.domain.value_objects.weather_description import InvalidWeatherDescriptionError
+from app.domain.value_objects.weather_units import InvalidWeatherUnitsError
+from app.domain.value_objects.humidity import InvalidHumidityError
+from app.domain.value_objects.pressure import InvalidPressureError
+from app.domain.value_objects.wind_speed import InvalidWindSpeedError
+from app.domain.value_objects.location_name import InvalidLocationNameError
+# Note: InvalidWeatherDataError is defined in app.domain.entities.weather
+# Import it directly from there if needed to avoid circular imports
