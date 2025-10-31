@@ -26,6 +26,9 @@ BLK-1-02 (Check Error?)
                   +--[false]--> BLK-1-09 (Request Routing API)
                                  |
                                  v
+                                 BLK-1-16 (Process Traffic Sections)
+                                 |
+                                 v
                                  BLK-1-10 (Success?)
                                  |
                                  +--[true]--> BLK-1-12 (Transform Success Data)
@@ -46,3 +49,4 @@ BLK-1-02 (Check Error?)
 
 External Services:
 - BLK-1-15 (TomTom API - calculateRoute) -> BLK-1-09
+- BLK-1-17 (TomTom API - reverse geocode) -> BLK-1-16
