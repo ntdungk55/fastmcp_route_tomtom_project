@@ -114,3 +114,4 @@ Mục tiêu: Kiểm tra xem API call từ WeatherAPI.com có thành công hay kh
   - `app/infrastructure/adapters/weather_adapter.py` - API error checking
 
 
+

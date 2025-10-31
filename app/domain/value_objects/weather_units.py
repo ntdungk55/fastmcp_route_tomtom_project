@@ -67,3 +67,4 @@ class WeatherUnits:
         return hash(self.value)
 
 
+

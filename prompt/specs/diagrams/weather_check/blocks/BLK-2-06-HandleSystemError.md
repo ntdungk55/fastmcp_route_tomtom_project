@@ -118,3 +118,4 @@ Mục tiêu: Xử lý các lỗi hệ thống (API key không cấu hình, netwo
   - `app/infrastructure/adapters/weather_adapter.py` - API error handling
 
 
+

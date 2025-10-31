@@ -45,3 +45,4 @@ class Humidity:
         return hash(self.value)
 
 
+

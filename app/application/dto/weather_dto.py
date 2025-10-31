@@ -52,3 +52,4 @@ class WeatherResponse:
     error_code: Optional[str] = None
 
 
+

@@ -116,3 +116,4 @@ Mục tiêu: Chuyển đổi validation errors thành user-friendly messages đ�
   - `app/application/use_cases/get_weather.py` - Error handling
 
 
+

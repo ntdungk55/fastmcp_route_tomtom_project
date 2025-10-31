@@ -91,3 +91,4 @@ class WindSpeed:
         return abs(self.to_mps() - other.to_mps()) < 0.1
 
 
+
